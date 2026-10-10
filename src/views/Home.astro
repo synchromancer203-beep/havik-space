@@ -1,6 +1,6 @@
 ---
 // Home. Motion: scroll-driven only (ref marcuslorenzet).
-// Riso one-ink print only on the hero and personal photos; work images keep their real colours.
+// Riso one-ink print only on the hero; everything else keeps its real colours.
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Ink from '../components/Ink.astro';
@@ -14,6 +14,16 @@ import bh from '../assets/work/beach-heaven.webp';
 import wc from '../assets/work/warcross.webp';
 import nob from '../assets/work/nob-network.jpg';
 import open from '../assets/work/open.webp';
+import cm01 from '../assets/collage/cm-01.webp';
+import cm05 from '../assets/collage/cm-05.png';
+import cm09 from '../assets/collage/cm-09.webp';
+import cm11 from '../assets/collage/cm-11.webp';
+import cm13 from '../assets/collage/cm-13.webp';
+import cm15 from '../assets/collage/cm-15.webp';
+import mk02 from '../assets/collage/mukang-02.jpg';
+import mk03 from '../assets/collage/mukang-03.jpg';
+import op01 from '../assets/collage/open-01.webp';
+import op03 from '../assets/collage/open-03.webp';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
@@ -26,17 +36,21 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Images that drift past the three fields: left %, width vw, speed, start offset vh.
-// Personal photos get the riso print; work covers stay true colour.
-const flyers = [
-  { src: chanDung, ink: true, x: 3, w: 15, speed: 1.2, at: 18 },
-  { src: open, ink: false, x: 72, w: 20, speed: 0.9, at: 6 },
-  { src: musicLive, ink: true, x: 54, w: 18, speed: 1.55, at: 70 },
-  { src: wc, ink: false, x: 14, w: 12, speed: 1.05, at: 100 },
-  { src: bh, ink: false, x: 83, w: 11, speed: 1.4, at: 118 },
-  { src: liveNov, ink: true, x: 28, w: 17, speed: 1.3, at: 140 },
-  { src: musicHero, ink: true, x: 64, w: 16, speed: 1.1, at: 165 },
+// Collage behind the three fields: columns drift up at different rates so the frame
+// always stays full. Each tile gets a small width/offset jitter so it reads as loose,
+// not as a grid. Columns 3–4 are hidden on mobile.
+const baseColumns = [
+  [chanDung, cm11, wc, mk03, cm15],
+  [cm01, open, liveNov, bh, cm05],
+  [musicHero, cm09, nob, op03, cm13],
+  [musicLive, mk02, cm, op01, chanDung],
 ];
+// Each column runs twice (second pass rotated) so it is always taller than its travel.
+const columns = baseColumns.map((c) => [...c, ...c.slice(2), ...c.slice(0, 2)]);
+// Deterministic jitter so builds are stable: [width %, x offset %].
+const jitter = [[100, 0], [88, 8], [94, -4], [84, 12], [96, 2], [90, -6], [86, -10]];
+const colRates = [0.92, 1, 0.84, 0.96];
+const colLead = ['6vh', '-10vh', '14vh', '-2vh'];
 
 // Interim featured list; Phase 2 will read this from the content collection.
 const featured = [
@@ -62,15 +76,20 @@ const featured = [
     <a href={href(lang, '/media')} class="btn btn--signal hero-cta">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
   </section>
 
-  <!-- FIELDS: three words light up as you scroll; covers drift past -->
+  <!-- FIELDS: three words over a drifting collage; the words invert wherever a photo passes beneath -->
   <section class="fields">
     <div class="f-stage">
-      <div class="flyers" aria-hidden="true">
-        {flyers.map((f) => (
-          <div class="flyer" style={`left:${f.x}%;width:${f.w}vw;top:${f.at}vh;aspect-ratio:${f.src.width}/${f.src.height}`} data-speed={f.speed}>
-            {f.ink
-              ? <Ink src={f.src} widths={[320, 640]} sizes={`${f.w}vw`} contrast={1.5} />
-              : <Image src={f.src} alt="" widths={[320, 640]} sizes={`${f.w}vw`} />}
+      <div class="collage" aria-hidden="true">
+        {columns.map((col, ci) => (
+          <div class="col" data-rate={colRates[ci]} style={`margin-top:${colLead[ci]}`}>
+            {col.map((img, ii) => {
+              const [w, x] = jitter[(ci * 2 + ii) % jitter.length];
+              return (
+                <div class="tile" style={`width:${w}%;transform:translateX(${x}%);aspect-ratio:${img.width}/${img.height}`}>
+                  <Image src={img} alt="" widths={[400, 720]} sizes="(min-width: 768px) 25vw, 50vw" />
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
@@ -78,7 +97,7 @@ const featured = [
         {fields.map((f, i) => (
           <li>
             <a href={href(lang, f.path)} class="f-word">
-              <span class="f-num meta">/0{i + 1}</span>
+              <span class="f-num">{i + 1}.</span>
               <span class="display">{t(f.key)}</span>
             </a>
           </li>
@@ -146,13 +165,14 @@ const featured = [
       scrollTrigger: { trigger: '.fields', start: 'top 30%', end: 'bottom bottom', scrub: true },
     });
 
-    // Covers drift upward through the frame at their own speeds.
-    document.querySelectorAll<HTMLElement>('.flyer').forEach((el) => {
-      const s = Number(el.dataset.speed);
-      gsap.fromTo(el, { y: '40vh' }, {
-        y: `${-160 * s}vh`,
+    // Collage columns drift upward; each travels its own height so none runs out of tiles.
+    document.querySelectorAll<HTMLElement>('.col').forEach((col) => {
+      const rate = Number(col.dataset.rate);
+      // Travel 1.5 screens at most; columns are ≥ 2.7 screens tall, so the bottom never shows.
+      gsap.fromTo(col, { y: () => innerHeight * 0.15 }, {
+        y: () => -Math.min(col.offsetHeight - innerHeight * 1.1, innerHeight * 1.5) * rate,
         ease: 'none',
-        scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'bottom top', scrub: true },
+        scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true },
       });
     });
 
@@ -218,31 +238,48 @@ const featured = [
 
   /* ---------- Fields ---------- */
   .fields {
-    position: relative; z-index: 1;
-    height: 260vh;
-    background:
+    --fields-bg:
       radial-gradient(90% 60% at 85% 10%, rgba(71, 55, 255, 0.05), transparent 60%),
       linear-gradient(180deg, #f5f5f7 0%, #ececf0 100%);
-    /* Lift the curtain off the dark hero; shadow only shows once it starts covering. */
+    position: relative; z-index: 1;
+    height: 260vh;
+    background: var(--fields-bg);
+    /* Lift the curtain off the hero. */
     box-shadow: 0 -24px 48px rgba(7, 6, 26, 0.28);
-    margin-top: 0;
   }
-  .f-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; align-items: center; }
-  .f-list { position: relative; z-index: 2; display: grid; gap: 2vh; }
-  .f-word { display: inline-flex; align-items: flex-start; gap: 16px; opacity: 0.12; transition: color 0.3s; }
+  /* The stage carries its own background so the blended words have something to invert against. */
+  .f-stage {
+    position: sticky; top: 0; height: 100svh; overflow: hidden;
+    display: grid; align-items: center;
+    background: var(--fields-bg);
+    isolation: isolate;
+  }
+
+  .collage {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; padding-inline: 14px;
+    align-items: start;
+  }
+  .col { display: grid; gap: 14px; justify-items: center; will-change: transform; }
+  .tile { overflow: hidden; box-shadow: 0 18px 40px -18px rgba(32, 32, 48, 0.35); }
+  .tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* White + difference: dark on the paper, inverted wherever a photo sits underneath. */
+  .f-list {
+    position: relative; z-index: 2;
+    display: grid; gap: 2vh;
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+  .f-word { display: inline-flex; align-items: flex-start; gap: 16px; opacity: 0.18; }
   .f-word .display {
     font-size: clamp(64px, 11vw, 180px);
     font-weight: 800;
     line-height: 1.12; /* room for stacked Vietnamese diacritics (Ồ, Ạ) */
     text-transform: uppercase;
   }
-  .f-num { padding-top: 0.8em; }
-  .f-word:hover { color: var(--blue); }
-
-  .flyers { position: absolute; inset: 0; z-index: 1; }
-  .flyer { position: absolute; overflow: hidden; will-change: transform; box-shadow: 0 24px 48px -16px rgba(32, 32, 48, 0.3); }
-  .flyer img, .flyer :global(.ink) { width: 100%; height: 100%; }
-  .flyer img { object-fit: cover; }
+  .f-num { font-family: var(--mono); font-size: clamp(14px, 1.4vw, 20px); padding-top: 1.2em; }
 
   /* ---------- Selected ---------- */
   .selected {
@@ -292,7 +329,9 @@ const featured = [
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
     .hero-cta { left: var(--gutter); right: auto; }
-    .flyer { width: 32vw !important; }
+    .collage { grid-template-columns: repeat(2, 1fr); gap: 10px; padding-inline: 10px; }
+    .col { gap: 10px; }
+    .col:nth-child(n + 3) { display: none; }
     .hero-cta { bottom: calc(6vh + 22vw + 16px); }
   }
 </style>
