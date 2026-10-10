@@ -1,15 +1,19 @@
 ---
-// Home. Motion: scroll-driven only (ref marcuslorenzet). Work images keep their real colours.
+// Home. Motion: scroll-driven only (ref marcuslorenzet).
+// Riso one-ink print only on the hero and personal photos; work images keep their real colours.
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
+import Ink from '../components/Ink.astro';
+import chanDung from '../assets/personal/chan-dung.webp';
+import liveNov from '../assets/personal/live-novation.jpg';
+import musicHero from '../assets/personal/music-hero.jpg';
+import musicLive from '../assets/personal/music-live.jpg';
 import hero from '../assets/home/hero-portrait.jpg';
 import cm from '../assets/work/corrupted-moonlight.webp';
 import bh from '../assets/work/beach-heaven.webp';
 import wc from '../assets/work/warcross.webp';
 import nob from '../assets/work/nob-network.jpg';
-import nn from '../assets/work/noise-night.webp';
 import open from '../assets/work/open.webp';
-import mare from '../assets/work/mare-crisisium.webp';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
@@ -22,13 +26,16 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Covers that drift past the three fields: left %, width vw, speed, start offset vh.
+// Images that drift past the three fields: left %, width vw, speed, start offset vh.
+// Personal photos get the riso print; work covers stay true colour.
 const flyers = [
-  { src: nn, x: 3, w: 15, speed: 1.25, at: 25 },
-  { src: open, x: 72, w: 20, speed: 0.9, at: 8 },
-  { src: mare, x: 58, w: 12, speed: 1.6, at: 75 },
-  { src: wc, x: 14, w: 12, speed: 1.05, at: 100 },
-  { src: bh, x: 82, w: 11, speed: 1.4, at: 120 },
+  { src: chanDung, ink: true, x: 3, w: 15, speed: 1.2, at: 18 },
+  { src: open, ink: false, x: 72, w: 20, speed: 0.9, at: 6 },
+  { src: musicLive, ink: true, x: 54, w: 18, speed: 1.55, at: 70 },
+  { src: wc, ink: false, x: 14, w: 12, speed: 1.05, at: 100 },
+  { src: bh, ink: false, x: 83, w: 11, speed: 1.4, at: 118 },
+  { src: liveNov, ink: true, x: 28, w: 17, speed: 1.3, at: 140 },
+  { src: musicHero, ink: true, x: 64, w: 16, speed: 1.1, at: 165 },
 ];
 
 // Interim featured list; Phase 2 will read this from the content collection.
@@ -43,7 +50,9 @@ const featured = [
   <!-- HERO: dark portrait plate; the next section slides over it like a curtain -->
   <section class="hero" data-theme="dark">
     <div class="hero-photo">
-      <Image src={hero} alt="Havik" widths={[720, 1080]} sizes="(min-width: 768px) 60vh, 100vw" loading="eager" fetchpriority="high" />
+      <div class="hero-photo-in">
+        <Ink src={hero} alt="Havik" widths={[720, 1080]} sizes="(min-width: 768px) 60vh, 100vw" loading="eager" contrast={1.7} />
+      </div>
     </div>
 
     <h1 class="display hero-name" aria-label="Havik">
@@ -58,8 +67,10 @@ const featured = [
     <div class="f-stage">
       <div class="flyers" aria-hidden="true">
         {flyers.map((f) => (
-          <div class="flyer" style={`left:${f.x}%;width:${f.w}vw;top:${f.at}vh`} data-speed={f.speed}>
-            <Image src={f.src} alt="" widths={[320, 640]} sizes={`${f.w}vw`} />
+          <div class="flyer" style={`left:${f.x}%;width:${f.w}vw;top:${f.at}vh;aspect-ratio:${f.src.width}/${f.src.height}`} data-speed={f.speed}>
+            {f.ink
+              ? <Ink src={f.src} widths={[320, 640]} sizes={`${f.w}vw`} contrast={1.5} />
+              : <Image src={f.src} alt="" widths={[320, 640]} sizes={`${f.w}vw`} />}
           </div>
         ))}
       </div>
@@ -88,10 +99,8 @@ const featured = [
         {featured.map((f, i) => (
           <li class="case">
             <a href={href(lang, `/media?tab=${f.tab}`)} class="case-link">
-              <div class="case-media">
-                <div class="case-img">
-                  <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" style={`object-position:${f.pos}`} />
-                </div>
+              <div class="case-media" style={`--r:${f.img.width / f.img.height}`}>
+                <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" />
               </div>
               <div class="case-info">
                 <span class="case-num display">{String(i + 1).padStart(2, '0')}</span>
@@ -119,14 +128,14 @@ const featured = [
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Load: portrait fades up, name rises out of its mask.
-  gsap.from('.hero-photo', { opacity: 0, scale: 1.05, duration: 1.8, ease: 'power2.out' });
+  gsap.from('.hero-photo-in', { opacity: 0, scale: 1.05, duration: 1.8, ease: 'power2.out' });
   gsap.from('.hero-name .line > span', { yPercent: 105, duration: 1.4, ease: 'expo.out', delay: 0.25 });
   gsap.from('.hero-cta', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.9 });
 
   if (!reduce) {
     // Hero recedes while the next section slides over it.
     gsap.timeline({ scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'top top', scrub: true } })
-      .to('.hero-photo', { scale: 1.1, yPercent: 6, opacity: 0.55, ease: 'none' }, 0)
+      .to('.hero-photo', { scale: 1.1, yPercent: 6, ease: 'none' }, 0)
       .to('.hero-name', { yPercent: -35, ease: 'none' }, 0);
 
     // The three fields light up one after another.
@@ -158,8 +167,8 @@ const featured = [
         clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
         scrollTrigger: { trigger: c, start: 'top 95%', end: 'top 35%', scrub: true },
       });
-      gsap.fromTo(c.querySelector('.case-img'), { yPercent: -8 }, {
-        yPercent: 8, ease: 'none',
+      gsap.fromTo(c.querySelector('.case-media'), { y: 40 }, {
+        y: -40, ease: 'none',
         scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true },
       });
       gsap.from(c.querySelectorAll('.case-info > *'), {
@@ -175,14 +184,14 @@ const featured = [
 <style>
   /* ---------- Hero ---------- */
   .hero {
-    --plate: #07061a; /* sampled from the portrait's background */
+    --plate: #4334f4; /* Vivid Blue after the paper multiply in Ink, so the print melts into it */
     position: sticky;
     top: 0;
     height: 100svh;
     min-height: 560px;
     overflow: hidden;
     z-index: 0;
-    background: radial-gradient(70% 90% at 70% 40%, #120f33 0%, var(--plate) 70%);
+    background: radial-gradient(70% 90% at 70% 40%, #4b3dff 0%, var(--plate) 70%);
     color: var(--paper);
   }
   .hero-photo {
@@ -194,7 +203,7 @@ const featured = [
             mask-image: linear-gradient(to right, transparent 0%, #000 22%, #000 85%, transparent 100%), linear-gradient(to top, transparent 0%, #000 30%);
             mask-composite: intersect;
   }
-  .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-photo-in, .hero-photo :global(.ink) { width: 100%; height: 100%; }
 
   .hero-name {
     position: absolute; left: var(--gutter); bottom: 6vh; z-index: 1;
@@ -219,20 +228,21 @@ const featured = [
     margin-top: 0;
   }
   .f-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; align-items: center; }
-  .f-list { position: relative; z-index: 2; display: grid; gap: 1vh; }
+  .f-list { position: relative; z-index: 2; display: grid; gap: 2vh; }
   .f-word { display: inline-flex; align-items: flex-start; gap: 16px; opacity: 0.12; transition: color 0.3s; }
   .f-word .display {
     font-size: clamp(64px, 11vw, 180px);
     font-weight: 800;
-    line-height: 0.88;
+    line-height: 1.12; /* room for stacked Vietnamese diacritics (Ồ, Ạ) */
     text-transform: uppercase;
   }
   .f-num { padding-top: 0.8em; }
   .f-word:hover { color: var(--blue); }
 
   .flyers { position: absolute; inset: 0; z-index: 1; }
-  .flyer { position: absolute; aspect-ratio: 4 / 5; overflow: hidden; will-change: transform; box-shadow: 0 24px 48px -16px rgba(32, 32, 48, 0.3); }
-  .flyer img { width: 100%; height: 100%; object-fit: cover; }
+  .flyer { position: absolute; overflow: hidden; will-change: transform; box-shadow: 0 24px 48px -16px rgba(32, 32, 48, 0.3); }
+  .flyer img, .flyer :global(.ink) { width: 100%; height: 100%; }
+  .flyer img { object-fit: cover; }
 
   /* ---------- Selected ---------- */
   .selected {
@@ -247,9 +257,13 @@ const featured = [
 
   .cases { display: grid; gap: 14vh; list-style: none; padding: 0; }
   .case-link { display: grid; gap: 24px; }
-  .case-media { overflow: hidden; aspect-ratio: 16 / 10; background: var(--ink); box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
-  .case-img { height: 116%; margin-top: -8%; }
-  .case-img img { width: 100%; height: 100%; object-fit: cover; }
+  .case-media {
+    /* Keep the artwork's own proportions; cap tall pieces at 85vh. */
+    aspect-ratio: var(--r);
+    width: min(100%, calc(85vh * var(--r)));
+    box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45);
+  }
+  .case-media img { display: block; width: 100%; height: 100%; }
   .case-info { display: grid; align-content: start; gap: 16px; }
   .case-num { font-size: clamp(56px, 7vw, 112px); font-weight: 800; color: var(--blue); line-height: 0.8; }
   .case-title { font-size: clamp(36px, 4vw, 64px); font-weight: 700; line-height: 0.95; }
@@ -269,7 +283,7 @@ const featured = [
   @media (min-width: 1024px) {
     .case-link { grid-template-columns: 7fr 4fr; gap: 5vw; align-items: start; }
     .case:nth-child(even) .case-link { grid-template-columns: 4fr 7fr; }
-    .case:nth-child(even) .case-media { order: 2; }
+    .case:nth-child(even) .case-media { order: 2; justify-self: end; }
   }
   @media (max-width: 767px) {
     .hero-photo {
@@ -277,7 +291,8 @@ const featured = [
       -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 45%);
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
-    .hero-cta { left: var(--gutter); right: auto; bottom: calc(3vh + 22vw + 16px); }
+    .hero-cta { left: var(--gutter); right: auto; }
     .flyer { width: 32vw !important; }
+    .hero-cta { bottom: calc(6vh + 22vw + 16px); }
   }
 </style>

@@ -23,7 +23,7 @@ const isActive = (path: string) => {
         {nav.map((item, i) => (
           <li class:list={['item', { 'has-sub': item.children }]}>
             <a href={href(lang, item.path)} class:list={{ active: isActive(item.path) && item.path !== '/#contact' }}>
-              <span class="num">/0{i + 1}</span>{t(item.key)}
+              <span class="num">{i + 1}.</span>{t(item.key)}
             </a>
             {item.children && (
               <ul class="sub">
@@ -63,14 +63,14 @@ const isActive = (path: string) => {
         <li>
           {item.children ? (
             <details>
-              <summary><span class="num">/0{i + 1}</span>{t(item.key)}<span class="plus" aria-hidden="true">+</span></summary>
+              <summary><span class="num">{i + 1}.</span>{t(item.key)}<span class="plus" aria-hidden="true">+</span></summary>
               <ul>
                 <li><a href={href(lang, item.path)}>{t(item.key)} ↗</a></li>
                 {item.children.map((c) => <li><a href={href(lang, c.path)}>{t(c.key)} ↗</a></li>)}
               </ul>
             </details>
           ) : (
-            <a href={href(lang, item.path)} class="row"><span class="num">/0{i + 1}</span>{t(item.key)}</a>
+            <a href={href(lang, item.path)} class="row"><span class="num">{i + 1}.</span>{t(item.key)}</a>
           )}
         </li>
       ))}
@@ -122,7 +122,7 @@ const isActive = (path: string) => {
   }
   .header.on-blue { background: transparent; color: var(--paper); border-color: transparent; }
   .header.on-blue .logo span { color: var(--orange); }
-  .header.on-blue .num { color: rgba(255, 255, 255, 0.6); }
+  .header.on-blue .num { color: rgba(255, 255, 255, 0.55); }
   .header.on-blue .menu, .header.on-blue .item { border-color: transparent; }
   .header.on-blue .item > a:hover { background: rgba(255, 255, 255, 0.12); }
   .header.on-blue .lang, .header.on-blue .lang a + a, .header.on-blue .burger { border-color: var(--paper); }
@@ -134,9 +134,9 @@ const isActive = (path: string) => {
   .logo { font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: 0.02em; line-height: 1; }
   .logo span { color: var(--blue); }
 
-  .num { font-size: 10px; color: var(--stone); margin-right: 6px; }
-  .desktop .num { display: none; }
-  @media (min-width: 1280px) { .desktop .num { display: inline; } .item > a { padding: 0 18px; } }
+  /* Menu index: same size as the label, light grey. */
+  .num { font-size: inherit; color: #a9a9b3; margin-right: 0.4em; }
+  @media (min-width: 1280px) { .item > a { padding: 0 18px; } }
 
   /* Desktop menu: cells divided by lines */
   .desktop { display: none; align-self: stretch; }
