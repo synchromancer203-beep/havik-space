@@ -6,10 +6,9 @@ const lang = getLang(Astro.url);
 const t = useT(lang);
 ---
 <Base title="404">
-  <section class="grid-bg wrap">
+  <section class="wrap">
     <div class="container">
-      <div class="frame box">
-        <span class="x tl"></span><span class="x tr"></span><span class="x bl"></span><span class="x br"></span>
+      <div class="box">
         <p class="meta">ERR_404 · SIGNAL LOST</p>
         <h1 class="display">404<span>//</span><br />Signal lost</h1>
         {/* GitHub Pages serves one 404.html for every language, so it carries both. */}
@@ -28,7 +27,7 @@ const t = useT(lang);
 <style>
   .wrap { padding-block: clamp(40px, 10vw, 120px); }
   .box { padding: clamp(20px, 4vw, 48px); display: grid; gap: 24px; }
-  h1 { font-size: clamp(56px, 14vw, 200px); }
+  h1 { font-size: clamp(32px, 7vw, 100px); }
   h1 span { color: var(--orange); }
   .actions { display: flex; flex-wrap: wrap; gap: 12px; }
 </style>

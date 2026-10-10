@@ -14,70 +14,83 @@ const tags = [
 ] as const;
 ---
 <Base>
-  <section class="hero grid-bg">
-    <div class="container inner">
-      <div class="hud meta">
-        <span><i class="pixel"></i>SYS.ONLINE</span>
-        <span>21.0285°N 105.8542°E</span>
-        <span>HANOI // VN</span>
-      </div>
+  <section class="hero">
+    <div class="layer photo" data-depth="0.25">
+      <Image src={hero} alt="" widths={[960, 1440, 2048]} sizes="100vw" loading="eager" fetchpriority="high" />
+    </div>
+    <div class="layer glow" aria-hidden="true"></div>
 
+    <div class="container content" data-depth="-0.08">
       <h1 class="display name">HAVIK<span>.</span></h1>
-
-      <div class="grid">
-        <figure class="frame photo">
-          <span class="x tl"></span><span class="x tr"></span><span class="x bl"></span><span class="x br"></span>
-          <Image src={hero} alt="" widths={[640, 960, 1440]} sizes="(min-width: 1024px) 60vw, 100vw" loading="eager" fetchpriority="high" />
-          <figcaption class="meta">CAM_01 · LIVE · NOVATION</figcaption>
-        </figure>
-
-        <div class="side">
-          <ul class="tags">
-            {tags.map((tg, i) => (
-              <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span>{t(tg.key)}<span aria-hidden="true">↗</span></a></li>
-            ))}
-          </ul>
-          <div class="actions">
-            <a href={href(lang, '/media')} class="btn btn--blue">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
-            <a href={href(lang, '/#contact')} class="btn">{t('cta')}</a>
-          </div>
-        </div>
-      </div>
+      <ul class="tags">
+        {tags.map((tg, i) => (
+          <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span>{t(tg.key)}</a></li>
+        ))}
+      </ul>
     </div>
   </section>
 </Base>
 
+<script>
+  // Light scroll parallax: layers drift at different speeds for depth.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const layers = [...document.querySelectorAll<HTMLElement>('[data-depth]')];
+    let ticking = false;
+    const update = () => {
+      const y = scrollY;
+      layers.forEach((l) => (l.style.transform = `translate3d(0, ${y * Number(l.dataset.depth)}px, 0)`));
+      ticking = false;
+    };
+    addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(update); ticking = true; } }, { passive: true });
+  }
+</script>
+
 <style>
-  .hero { border-bottom: 1px solid var(--ink); overflow: hidden; }
-  .inner { padding-block: 24px 48px; }
-  .hud { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
-  .hud span { display: inline-flex; align-items: center; gap: 8px; }
+  .hero {
+    position: relative;
+    min-height: calc(100svh - var(--header-h));
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .layer { position: absolute; inset: 0; z-index: -1; }
+  /* Static fade at the bottom so the drifting photo never shows a hard edge. */
+  .hero::after {
+    content: ''; position: absolute; inset: auto 0 0; height: 35%; z-index: -1; pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--paper-2) 85%);
+  }
+
+  /* Photo bleeds edge to edge and dissolves into the paper toward the bottom and left. */
+  .photo { will-change: transform; }
+  .photo img {
+    width: 100%; height: 115%; object-fit: cover; object-position: 50% 30%;
+    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 92%);
+            mask-image: linear-gradient(to bottom, #000 45%, transparent 92%);
+  }
+  /* Soft blue halo sitting between photo and type. */
+  .glow {
+    background:
+      radial-gradient(60% 50% at 70% 40%, rgba(71, 55, 255, 0.28), transparent 70%),
+      linear-gradient(to right, rgba(242, 242, 244, 0.55), transparent 45%);
+    mix-blend-mode: multiply;
+  }
+
+  .content { position: relative; padding-block: 48px 40px; will-change: transform; }
   .name {
-    font-size: clamp(88px, 26vw, 400px);
-    margin: 16px 0 24px -0.05em;
+    font-size: clamp(56px, 13vw, 200px);
+    margin-left: -0.04em;
+    color: var(--ink);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
   }
   .name span { color: var(--blue); }
 
-  .grid { display: grid; gap: 24px; }
-  .photo { margin: 0; padding: 8px; }
-  .photo img { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; filter: grayscale(0.2) contrast(1.05); }
-  .photo figcaption { padding: 8px 4px 0; }
-
-  .side { display: flex; flex-direction: column; gap: 24px; position: relative; }
-  .tags { border-top: 1px solid var(--ink); }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 20px; }
   .tags a {
-    display: flex; align-items: baseline; gap: 12px; padding: 14px 0;
-    border-bottom: 1px solid var(--ink);
-    font-family: var(--display); font-weight: 800; text-transform: uppercase;
-    font-size: clamp(28px, 4vw, 44px); letter-spacing: -0.02em; line-height: 1;
-    transition: color 0.2s, padding 0.3s var(--ease-out);
+    display: inline-flex; align-items: baseline; gap: 8px;
+    font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
   }
-  .tags a > span:last-child { margin-left: auto; font-family: var(--mono); font-size: 18px; }
-  .tags a:hover { color: var(--blue); padding-left: 8px; }
-  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
-
-  @media (min-width: 1024px) {
-    .grid { grid-template-columns: 3fr 2fr; align-items: end; }
-    .name { margin-top: -0.02em; }
-  }
+  .tags a:hover { color: var(--blue); border-color: var(--blue); }
 </style>
