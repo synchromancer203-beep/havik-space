@@ -1,6 +1,6 @@
 ---
 // Phase 1: hero only. Remaining sections arrive in Phase 3.
-import { Image } from 'astro:assets';
+import { getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import hero from '../assets/home/hero.jpg';
 import { getLang, useT, href } from '../i18n/utils';
@@ -12,80 +12,168 @@ const tags = [
   { key: 'spec.visual', path: '/specialties/visual' },
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
+const heroImg = await getImage({ src: hero, width: 1800, format: 'webp', quality: 82 });
 ---
 <Base>
-  <section class="hero">
-    <div class="layer photo" data-depth="0.25">
-      <Image src={hero} alt="" widths={[960, 1440, 2048]} sizes="100vw" loading="eager" fetchpriority="high" />
-    </div>
-    <div class="layer glow" aria-hidden="true"></div>
+  <section class="hero" data-src={heroImg.src}>
+    <div class="stage">
+      <div class="media">
+        <canvas aria-hidden="true"></canvas>
+        <img src={heroImg.src} alt="" class="fallback" />
+      </div>
 
-    <div class="container content" data-depth="-0.08">
-      <h1 class="display name">HAVIK<span>.</span></h1>
-      <ul class="tags">
-        {tags.map((tg, i) => (
-          <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span>{t(tg.key)}</a></li>
-        ))}
-      </ul>
+      <div class="container content">
+        <h1 class="display name" aria-label="Havik">
+          {'HAVIK'.split('').map((c) => <span class="ch" aria-hidden="true">{c}</span>)}<span class="ch dot" aria-hidden="true">.</span>
+        </h1>
+        <ul class="tags">
+          {tags.map((tg, i) => (
+            <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span>{t(tg.key)}</a></li>
+          ))}
+        </ul>
+      </div>
+
+      <p class="readout meta" aria-hidden="true">RES <b>1:1</b></p>
     </div>
   </section>
 </Base>
 
 <script>
-  // Light scroll parallax: layers drift at different speeds for depth.
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const layers = [...document.querySelectorAll<HTMLElement>('[data-depth]')];
-    let ticking = false;
-    const update = () => {
-      const y = scrollY;
-      layers.forEach((l) => (l.style.transform = `translate3d(0, ${y * Number(l.dataset.depth)}px, 0)`));
-      ticking = false;
-    };
-    addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(update); ticking = true; } }, { passive: true });
+  import { gsap, ScrollTrigger } from '../scripts/smooth';
+
+  const section = document.querySelector<HTMLElement>('.hero')!;
+  const canvas = section.querySelector('canvas')!;
+  const media = section.querySelector<HTMLElement>('.media')!;
+  const readout = section.querySelector('.readout b')!;
+  const chars = [...section.querySelectorAll<HTMLElement>('.ch')];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const ctx = canvas.getContext('2d')!;
+  const small = document.createElement('canvas');
+  const sctx = small.getContext('2d', { willReadFrequently: true })!;
+
+  // Palette for the dither stage (style-guide: ink, vivid blue, pale paper).
+  const INK = [32, 32, 48], BLUE = [71, 55, 255], PAPER = [242, 242, 244];
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
+
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = section.dataset.src!;
+
+  let progress = 0;
+  let W = 0, H = 0;
+
+  const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const map = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
+
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    W = canvas.width = Math.round(canvas.clientWidth * dpr);
+    H = canvas.height = Math.round(canvas.clientHeight * dpr);
+    draw();
+  }
+
+  function draw() {
+    if (!img.complete || !W) return;
+    const p = progress;
+
+    // 1 → 56 px blocks, eased so it holds clean for a moment then breaks apart.
+    const k = map(p, 0.08, 0.7);
+    const block = Math.max(1, Math.round(1 + 55 * k * k));
+    const sw = Math.max(1, Math.ceil(W / block));
+    const sh = Math.max(1, Math.ceil(H / block));
+    small.width = sw; small.height = sh;
+
+    // object-fit: cover, biased toward the upper third (the face).
+    const ir = img.naturalWidth / img.naturalHeight, cr = sw / sh;
+    let dw = sw, dh = sh, dx = 0, dy = 0;
+    if (ir > cr) { dw = sh * ir; dx = (sw - dw) / 2; } else { dh = sw / ir; dy = (sh - dh) * 0.3; }
+    sctx.imageSmoothingEnabled = true;
+    sctx.drawImage(img, dx, dy, dw, dh);
+
+    // Ordered dither into a 3-tone palette, cross-faded in once blocks are visible.
+    const mix = map(p, 0.25, 0.6);
+    if (mix > 0) {
+      const data = sctx.getImageData(0, 0, sw, sh);
+      const d = data.data;
+      for (let y = 0; y < sh; y++) {
+        for (let x = 0; x < sw; x++) {
+          const i = (y * sw + x) * 4;
+          const lum = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+          const v = clamp(lum * 2.2) * 2 + BAYER[(y & 3) * 4 + (x & 3)] - 0.5;
+          const c = v < 0.5 ? INK : v < 1.5 ? BLUE : PAPER;
+          d[i] += (c[0] - d[i]) * mix;
+          d[i + 1] += (c[1] - d[i + 1]) * mix;
+          d[i + 2] += (c[2] - d[i + 2]) * mix;
+        }
+      }
+      sctx.putImageData(data, 0, 0);
+    }
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(small, 0, 0, sw, sh, 0, 0, sw * block, sh * block);
+
+    readout.textContent = block === 1 ? '1:1' : `${block}PX · ${Math.round(mix * 100)}% DITHER`;
+  }
+
+  img.addEventListener('load', () => { section.classList.add('ready'); resize(); });
+  addEventListener('resize', resize);
+
+  if (!reduce) {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.6,
+        onUpdate: (st) => { progress = st.progress; draw(); },
+      },
+    });
+
+    // Photo gets shoved up and out of the frame in the last third.
+    tl.to(media, { yPercent: -18, scale: 1.12, ease: 'none', duration: 0.6 }, 0.4)
+      .to(media, { clipPath: 'inset(0% 0% 100% 0%)', ease: 'power2.in', duration: 0.25 }, 0.75);
+
+    // Letters drift apart at different speeds.
+    chars.forEach((c, i) => {
+      tl.to(c, { yPercent: -40 - i * 28, xPercent: (i - 2.5) * 14, ease: 'none', duration: 1 }, 0);
+    });
+
+    ScrollTrigger.refresh();
   }
 </script>
 
 <style>
-  .hero {
-    position: relative;
-    min-height: calc(100svh - var(--header-h));
-    display: flex;
-    align-items: flex-end;
+  /* Tall track; the stage sticks while the scroll scrubs the effect. */
+  .hero { position: relative; height: 260vh; }
+  .stage {
+    position: sticky; top: var(--header-h);
+    height: calc(100svh - var(--header-h));
     overflow: hidden;
-    isolation: isolate;
-  }
-  .layer { position: absolute; inset: 0; z-index: -1; }
-  /* Static fade at the bottom so the drifting photo never shows a hard edge. */
-  .hero::after {
-    content: ''; position: absolute; inset: auto 0 0; height: 35%; z-index: -1; pointer-events: none;
-    background: linear-gradient(to bottom, transparent, var(--paper-2) 85%);
+    display: flex; align-items: flex-end;
   }
 
-  /* Photo bleeds edge to edge and dissolves into the paper toward the bottom and left. */
-  .photo { will-change: transform; }
-  .photo img {
-    width: 100%; height: 115%; object-fit: cover; object-position: 50% 30%;
-    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 92%);
-            mask-image: linear-gradient(to bottom, #000 45%, transparent 92%);
-  }
-  /* Soft blue halo sitting between photo and type. */
-  .glow {
-    background:
-      radial-gradient(60% 50% at 70% 40%, rgba(71, 55, 255, 0.28), transparent 70%),
-      linear-gradient(to right, rgba(242, 242, 244, 0.55), transparent 45%);
-    mix-blend-mode: multiply;
+  .media { position: absolute; inset: 0; transform-origin: 50% 0%; clip-path: inset(0 0 0 0); will-change: transform, clip-path; }
+  canvas, .fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .fallback { object-fit: cover; object-position: 50% 30%; }
+  .hero.ready .fallback { display: none; }
+  /* Soft dissolve into paper at the bottom so the type sits on light ground. */
+  .media::after {
+    content: ''; position: absolute; inset: auto 0 0; height: 45%;
+    background: linear-gradient(to bottom, transparent, var(--paper-2) 90%);
   }
 
-  .content { position: relative; padding-block: 48px 40px; will-change: transform; }
+  .content { position: relative; padding-block: 0 32px; }
   .name {
     font-size: clamp(56px, 13vw, 200px);
     margin-left: -0.04em;
-    color: var(--ink);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    display: flex;
   }
-  .name span { color: var(--blue); }
+  .ch { display: inline-block; will-change: transform; }
+  .dot { color: var(--blue); }
 
-  .tags { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 20px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 16px; }
   .tags a {
     display: inline-flex; align-items: baseline; gap: 8px;
     font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em;
@@ -93,4 +181,10 @@ const tags = [
     transition: color 0.2s, border-color 0.2s;
   }
   .tags a:hover { color: var(--blue); border-color: var(--blue); }
+
+  .readout { position: absolute; right: var(--gutter); bottom: 36px; }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) { .hero { height: auto; } .stage { position: relative; } }
+  @media (max-width: 639px) { .readout { display: none; } }
 </style>
