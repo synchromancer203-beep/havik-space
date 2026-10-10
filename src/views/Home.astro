@@ -1,8 +1,8 @@
 ---
-// Home. Visual system: one-ink print (ref hermes-agent). Motion: scroll-driven only (ref marcuslorenzet).
+// Home. Motion: scroll-driven only (ref marcuslorenzet). Work images keep their real colours.
+import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Ink from '../components/Ink.astro';
-import hero from '../assets/home/hero.jpg';
+import hero from '../assets/home/hero-portrait.jpg';
 import cm from '../assets/work/corrupted-moonlight.webp';
 import bh from '../assets/work/beach-heaven.webp';
 import wc from '../assets/work/warcross.webp';
@@ -16,69 +16,63 @@ const lang = getLang(Astro.url);
 const t = useT(lang);
 const vi = lang === 'vi';
 
-const tags = [
+const fields = [
   { key: 'spec.music', path: '/specialties/music' },
   { key: 'spec.visual', path: '/specialties/visual' },
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Facts, not slogans. Words wrapped in * are highlighted.
-const statement = vi
-  ? 'Làm *synthwave* từ 2019. Vẽ *poster* cho những đêm noise. Xây hệ thống *marketing* cho NÓB Network và iMind.'
-  : 'Making *synthwave* since 2019. Drawing *posters* for noise nights. Building *marketing* systems for NÓB Network and iMind.';
-const words = statement.split(' ').map((w) => ({ text: w.replaceAll('*', ''), hl: w.includes('*') }));
-
-// Thumbnails that fly past the statement: [image, left %, width vw, speed, start offset vh]
+// Covers that drift past the three fields: left %, width vw, speed, start offset vh.
 const flyers = [
-  { src: nn, x: 4, w: 16, speed: 1.25, at: 30 },
-  { src: open, x: 74, w: 20, speed: 0.9, at: 10 },
-  { src: mare, x: 62, w: 13, speed: 1.6, at: 70 },
-  { src: wc, x: 16, w: 12, speed: 1.05, at: 95 },
+  { src: nn, x: 3, w: 15, speed: 1.25, at: 25 },
+  { src: open, x: 72, w: 20, speed: 0.9, at: 8 },
+  { src: mare, x: 58, w: 12, speed: 1.6, at: 75 },
+  { src: wc, x: 14, w: 12, speed: 1.05, at: 100 },
   { src: bh, x: 82, w: 11, speed: 1.4, at: 120 },
 ];
 
 // Interim featured list; Phase 2 will read this from the content collection.
 const featured = [
   { img: cm, title: 'Corrupted Moonlight', kind: vi ? 'Ban nhạc synthwave' : 'Synthwave band', role: 'Founder · Producer', year: '2019—', tab: 'music', pos: '50% 35%' },
-  { img: bh, title: 'Beach/heaven', kind: 'Album', role: vi ? 'Mix · Master · Sound design' : 'Mix · Master · Sound design', year: '2022', tab: 'music', pos: '50% 50%' },
-  { img: wc, title: 'Warcross', kind: vi ? 'Bìa sách & minh họa' : 'Book cover & illustration', role: 'Design', year: '2022', tab: 'visual', pos: '50% 40%' },
+  { img: bh, title: 'Beach/heaven', kind: 'Album', role: 'Mix · Master · Sound design', year: '2022', tab: 'music', pos: '50% 50%' },
+  { img: wc, title: 'Warcross', kind: vi ? 'Bìa sách & minh họa' : 'Book cover & illustration', role: 'Design', year: '2022', tab: 'visual', pos: '50% 50%' },
   { img: nob, title: 'NÓB Network', kind: vi ? 'Mạng lưới nghệ sĩ Live Electronic' : 'Live electronic artist network', role: 'Founder · CEO', year: '2026', tab: 'marketing', pos: '50% 50%' },
 ];
 ---
 <Base flush>
-  <!-- HERO: riso-printed portrait on paper; the next section slides over it like a curtain -->
-  <section class="hero">
+  <!-- HERO: dark portrait plate; the next section slides over it like a curtain -->
+  <section class="hero" data-theme="dark">
     <div class="hero-photo">
-      <Ink src={hero} widths={[960, 1440, 2048]} sizes="(min-width: 1024px) 64vw, 100vw" loading="eager" position="50% 30%" contrast={1.5} />
+      <Image src={hero} alt="Havik" widths={[720, 1080]} sizes="(min-width: 768px) 60vh, 100vw" loading="eager" fetchpriority="high" />
     </div>
-
-    <ul class="hero-tags">
-      {tags.map((tg, i) => (
-        <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span> {t(tg.key)}</a></li>
-      ))}
-    </ul>
 
     <h1 class="display hero-name" aria-label="Havik">
       <span class="line"><span>HAVIK</span></span>
     </h1>
+
+    <a href={href(lang, '/media')} class="btn btn--signal hero-cta">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
   </section>
 
-  <!-- STATEMENT: words light up as you scroll; covers fly past -->
-  <section class="statement">
-    <div class="st-stage">
+  <!-- FIELDS: three words light up as you scroll; covers drift past -->
+  <section class="fields">
+    <div class="f-stage">
       <div class="flyers" aria-hidden="true">
         {flyers.map((f) => (
           <div class="flyer" style={`left:${f.x}%;width:${f.w}vw;top:${f.at}vh`} data-speed={f.speed}>
-            <Ink src={f.src} widths={[320, 640]} sizes={`${f.w}vw`} />
+            <Image src={f.src} alt="" widths={[320, 640]} sizes={`${f.w}vw`} />
           </div>
         ))}
       </div>
-      <div class="container st-inner">
-        <p class="meta">[ /01 {vi ? 'Việc tôi làm' : 'What I do'} ]</p>
-        <p class="st-text">
-          {words.map((w) => <span class:list={['w', { hl: w.hl }]}>{w.text} </span>)}
-        </p>
-      </div>
+      <ul class="container f-list">
+        {fields.map((f, i) => (
+          <li>
+            <a href={href(lang, f.path)} class="f-word">
+              <span class="f-num meta">/0{i + 1}</span>
+              <span class="display">{t(f.key)}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 
@@ -87,7 +81,7 @@ const featured = [
     <div class="container">
       <header class="sel-head">
         <h2 class="display"><span class="line"><span>{vi ? 'Nổi bật.' : 'Selected.'}</span></span></h2>
-        <p class="meta">[ /02 {t('nav.media')} ]</p>
+        <p class="meta">[ {t('nav.media')} ]</p>
       </header>
 
       <ol class="cases">
@@ -95,7 +89,9 @@ const featured = [
           <li class="case">
             <a href={href(lang, `/media?tab=${f.tab}`)} class="case-link">
               <div class="case-media">
-                <div class="case-img"><Ink src={f.img} widths={[640, 1080, 1440]} sizes="(min-width: 1024px) 56vw, 100vw" position={f.pos} /></div>
+                <div class="case-img">
+                  <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" style={`object-position:${f.pos}`} />
+                </div>
               </div>
               <div class="case-info">
                 <span class="case-num display">{String(i + 1).padStart(2, '0')}</span>
@@ -112,7 +108,7 @@ const featured = [
         ))}
       </ol>
 
-      <a href={href(lang, '/media')} class="btn btn--blue all">{t('btn.viewAll')} <span aria-hidden="true">↗</span></a>
+      <a href={href(lang, '/media')} class="btn btn--signal all">{t('btn.viewAll')} <span aria-hidden="true">↗</span></a>
     </div>
   </section>
 </Base>
@@ -122,24 +118,23 @@ const featured = [
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Load: hero name rises out of its mask, tags follow.
-  gsap.from('.hero-name .line > span', { yPercent: 105, duration: 1.4, ease: 'expo.out', delay: 0.15 });
-  gsap.from('.hero-tags li', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08, delay: 0.6 });
-  gsap.from('.hero-photo', { opacity: 0, scale: 1.06, duration: 1.6, ease: 'power2.out' });
+  // Load: portrait fades up, name rises out of its mask.
+  gsap.from('.hero-photo', { opacity: 0, scale: 1.05, duration: 1.8, ease: 'power2.out' });
+  gsap.from('.hero-name .line > span', { yPercent: 105, duration: 1.4, ease: 'expo.out', delay: 0.25 });
+  gsap.from('.hero-cta', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.9 });
 
   if (!reduce) {
-    // Hero recedes while the statement slides over it.
-    gsap.timeline({ scrollTrigger: { trigger: '.statement', start: 'top bottom', end: 'top top', scrub: true } })
-      .to('.hero-photo', { scale: 1.12, yPercent: 8, ease: 'none' }, 0)
-      .to('.hero-name', { yPercent: -40, opacity: 0.25, ease: 'none' }, 0)
-      .to('.hero-tags', { opacity: 0, ease: 'none' }, 0);
+    // Hero recedes while the next section slides over it.
+    gsap.timeline({ scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'top top', scrub: true } })
+      .to('.hero-photo', { scale: 1.1, yPercent: 6, opacity: 0.55, ease: 'none' }, 0)
+      .to('.hero-name', { yPercent: -35, ease: 'none' }, 0);
 
-    // Statement: words fill from faint to ink, in reading order.
-    gsap.to('.st-text .w', {
+    // The three fields light up one after another.
+    gsap.to('.f-word', {
       opacity: 1,
-      stagger: 0.1,
+      stagger: 0.5,
       ease: 'none',
-      scrollTrigger: { trigger: '.statement', start: 'top 20%', end: 'bottom bottom', scrub: true },
+      scrollTrigger: { trigger: '.fields', start: 'top 30%', end: 'bottom bottom', scrub: true },
     });
 
     // Covers drift upward through the frame at their own speeds.
@@ -148,25 +143,22 @@ const featured = [
       gsap.fromTo(el, { y: '40vh' }, {
         y: `${-160 * s}vh`,
         ease: 'none',
-        scrollTrigger: { trigger: '.statement', start: 'top bottom', end: 'bottom top', scrub: true },
+        scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'bottom top', scrub: true },
       });
     });
 
-    // Section title rises from its mask.
     gsap.from('.sel-head .line > span', {
       yPercent: 105, duration: 1.2, ease: 'expo.out',
       scrollTrigger: { trigger: '.sel-head', start: 'top 80%' },
     });
 
-    // Each case: image opens from a narrow slit, content inside drifts (parallax).
+    // Each case: image opens from a narrow slit, content inside drifts.
     document.querySelectorAll<HTMLElement>('.case').forEach((c) => {
-      const media = c.querySelector('.case-media')!;
-      const img = c.querySelector('.case-img')!;
-      gsap.fromTo(media, { clipPath: 'inset(18% 12% 18% 12%)' }, {
+      gsap.fromTo(c.querySelector('.case-media'), { clipPath: 'inset(18% 12% 18% 12%)' }, {
         clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
         scrollTrigger: { trigger: c, start: 'top 95%', end: 'top 35%', scrub: true },
       });
-      gsap.fromTo(img, { yPercent: -8 }, {
+      gsap.fromTo(c.querySelector('.case-img'), { yPercent: -8 }, {
         yPercent: 8, ease: 'none',
         scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true },
       });
@@ -176,90 +168,100 @@ const featured = [
       });
     });
   } else {
-    gsap.set('.st-text .w', { opacity: 1 });
+    gsap.set('.f-word', { opacity: 1 });
   }
 </script>
 
 <style>
   /* ---------- Hero ---------- */
   .hero {
+    --plate: #07061a; /* sampled from the portrait's background */
     position: sticky;
     top: 0;
     height: 100svh;
     min-height: 560px;
     overflow: hidden;
     z-index: 0;
-    background: var(--paper-2);
+    background: radial-gradient(70% 90% at 70% 40%, #120f33 0%, var(--plate) 70%);
+    color: var(--paper);
   }
-  .hero-photo { position: absolute; inset: 0 0 0 auto; width: 72%; transform-origin: 70% 40%; }
-  .hero-photo :global(.ink) { height: 100%; }
-  /* Dissolve the print (halftone included) into the paper on the left and bottom. */
   .hero-photo {
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 42%), linear-gradient(to top, transparent 0%, #000 40%);
+    position: absolute; top: 0; bottom: 0; right: 8vw;
+    aspect-ratio: 9 / 16;
+    transform-origin: 50% 40%;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 22%, #000 85%, transparent 100%), linear-gradient(to top, transparent 0%, #000 30%);
     -webkit-mask-composite: source-in;
-            mask-image: linear-gradient(to right, transparent 0%, #000 42%), linear-gradient(to top, transparent 0%, #000 40%);
+            mask-image: linear-gradient(to right, transparent 0%, #000 22%, #000 85%, transparent 100%), linear-gradient(to top, transparent 0%, #000 30%);
             mask-composite: intersect;
   }
-
-  .hero-tags {
-    position: absolute; left: var(--gutter); top: calc(var(--header-h) + 32px);
-    display: grid; gap: 6px; z-index: 1;
-  }
-  .hero-tags a { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
-  .hero-tags a:hover { color: var(--blue); }
+  .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
 
   .hero-name {
-    position: absolute; left: var(--gutter); bottom: 2vh; z-index: 1;
-    font-size: clamp(110px, 24vw, 380px);
-    font-weight: 300;
+    position: absolute; left: var(--gutter); bottom: 6vh; z-index: 1;
+    font-size: clamp(110px, 22vw, 360px);
+    font-weight: 800;
     line-height: 0.8;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     margin-left: -0.03em;
-    color: var(--ink);
+    color: #fff;
   }
+  .hero-cta { position: absolute; right: var(--gutter); bottom: 5vh; z-index: 1; }
 
-  /* ---------- Statement ---------- */
-  .statement {
+  /* ---------- Fields ---------- */
+  .fields {
     position: relative; z-index: 1;
-    background: var(--paper-2);
     height: 260vh;
+    background:
+      radial-gradient(90% 60% at 85% 10%, rgba(71, 55, 255, 0.05), transparent 60%),
+      linear-gradient(180deg, #f5f5f7 0%, #ececf0 100%);
+    /* Lift the curtain off the dark hero; shadow only shows once it starts covering. */
+    box-shadow: 0 -24px 48px rgba(7, 6, 26, 0.28);
+    margin-top: 0;
   }
-  .st-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; align-items: center; }
-  .st-inner { position: relative; z-index: 2; pointer-events: none; }
-  .st-text {
-    font-family: var(--display);
-    font-weight: 400;
-    font-size: clamp(40px, 6.4vw, 104px);
-    line-height: 0.98;
-    letter-spacing: -0.005em;
-    max-width: 14ch;
-    margin-top: 24px;
+  .f-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; align-items: center; }
+  .f-list { position: relative; z-index: 2; display: grid; gap: 1vh; }
+  .f-word { display: inline-flex; align-items: flex-start; gap: 16px; opacity: 0.12; transition: color 0.3s; }
+  .f-word .display {
+    font-size: clamp(64px, 11vw, 180px);
+    font-weight: 800;
+    line-height: 0.88;
+    text-transform: uppercase;
   }
-  .w { opacity: 0.14; }
-  .w.hl { color: var(--blue); }
+  .f-num { padding-top: 0.8em; }
+  .f-word:hover { color: var(--blue); }
 
   .flyers { position: absolute; inset: 0; z-index: 1; }
-  .flyer { position: absolute; aspect-ratio: 4 / 5; will-change: transform; }
-  .flyer :global(.ink) { height: 100%; }
+  .flyer { position: absolute; aspect-ratio: 4 / 5; overflow: hidden; will-change: transform; box-shadow: 0 24px 48px -16px rgba(32, 32, 48, 0.3); }
+  .flyer img { width: 100%; height: 100%; object-fit: cover; }
 
   /* ---------- Selected ---------- */
-  .selected { position: relative; z-index: 1; background: var(--paper-2); padding-block: 12vh 16vh; }
+  .selected {
+    position: relative; z-index: 1;
+    padding-block: 12vh 16vh;
+    background:
+      radial-gradient(60% 40% at 0% 100%, rgba(247, 92, 3, 0.04), transparent 70%),
+      linear-gradient(180deg, #ececf0 0%, #f4f4f6 30%, #eeeef2 100%);
+  }
   .sel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 10vh; }
-  .sel-head h2 { font-size: clamp(72px, 13vw, 220px); font-weight: 300; }
+  .sel-head h2 { font-size: clamp(72px, 12vw, 200px); font-weight: 800; }
 
   .cases { display: grid; gap: 14vh; list-style: none; padding: 0; }
   .case-link { display: grid; gap: 24px; }
-  .case-media { overflow: hidden; aspect-ratio: 16 / 10; }
+  .case-media { overflow: hidden; aspect-ratio: 16 / 10; background: var(--ink); box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
   .case-img { height: 116%; margin-top: -8%; }
-  .case-img :global(.ink) { height: 100%; }
+  .case-img img { width: 100%; height: 100%; object-fit: cover; }
   .case-info { display: grid; align-content: start; gap: 16px; }
-  .case-num { font-size: clamp(56px, 7vw, 112px); color: var(--blue); line-height: 0.8; }
-  .case-title { font-size: clamp(36px, 4vw, 64px); font-weight: 400; line-height: 0.95; }
+  .case-num { font-size: clamp(56px, 7vw, 112px); font-weight: 800; color: var(--blue); line-height: 0.8; }
+  .case-title { font-size: clamp(36px, 4vw, 64px); font-weight: 700; line-height: 0.95; }
   .case-meta { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 14px; }
   .case-meta div { display: grid; grid-template-columns: 64px 1fr; }
   .case-meta dt { color: var(--stone); }
   .case-meta dd { margin: 0; color: var(--ink); }
-  .case-cta { font-size: 13px; letter-spacing: 0.08em; color: var(--blue); }
+  .case-cta {
+    justify-self: start;
+    font-size: 13px; font-weight: 500; letter-spacing: 0.08em;
+    color: var(--orange); border-bottom: 1px solid var(--orange);
+  }
   .case-link:hover .case-title { color: var(--blue); }
 
   .all { margin-top: 12vh; }
@@ -271,10 +273,11 @@ const featured = [
   }
   @media (max-width: 767px) {
     .hero-photo {
-      width: 100%;
-      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 55%);
-              mask-image: linear-gradient(to top, transparent 0%, #000 55%);
+      inset: 0; width: 100%; aspect-ratio: auto;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 45%);
+              mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
-    .flyer { width: 34vw !important; }
+    .hero-cta { left: var(--gutter); right: auto; bottom: calc(3vh + 22vw + 16px); }
+    .flyer { width: 32vw !important; }
   }
 </style>

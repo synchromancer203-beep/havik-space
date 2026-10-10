@@ -34,11 +34,17 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
-  .footer { position: relative; z-index: 1; margin-top: auto; background: var(--paper); border-top: 1px solid var(--line); }
+  .footer {
+    position: relative; z-index: 1; margin-top: auto;
+    background:
+      radial-gradient(50% 60% at 100% 0%, rgba(71, 55, 255, 0.04), transparent 70%),
+      linear-gradient(180deg, #ffffff 0%, #f1f1f4 100%);
+    border-top: 1px solid var(--line);
+  }
   .top { display: grid; gap: 40px; padding-block: 72px 32px; }
   .brand { display: grid; gap: 24px; justify-items: start; }
   .mail {
-    font-family: var(--display); font-weight: 400;
+    font-family: var(--display); font-weight: 700;
     font-size: clamp(28px, 4vw, 56px); line-height: 1; overflow-wrap: anywhere;
     border-bottom: 1px solid var(--blue);
     padding-bottom: 6px;
@@ -50,7 +56,7 @@ const year = new Date().getFullYear();
 
   .wordmark {
     font-size: clamp(96px, 22vw, 360px);
-    font-weight: 300;
+    font-weight: 800;
     line-height: 0.78;
     margin-inline: -0.03em;
     padding-top: 24px;
