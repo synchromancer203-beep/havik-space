@@ -1,0 +1,83 @@
+---
+// Phase 1: hero only. Remaining sections arrive in Phase 3.
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import hero from '../assets/home/hero.jpg';
+import { getLang, useT, href } from '../i18n/utils';
+
+const lang = getLang(Astro.url);
+const t = useT(lang);
+const tags = [
+  { key: 'spec.music', path: '/specialties/music' },
+  { key: 'spec.visual', path: '/specialties/visual' },
+  { key: 'spec.marketing', path: '/specialties/marketing' },
+] as const;
+---
+<Base>
+  <section class="hero grid-bg">
+    <div class="container inner">
+      <div class="hud meta">
+        <span><i class="pixel"></i>SYS.ONLINE</span>
+        <span>21.0285°N 105.8542°E</span>
+        <span>HANOI // VN</span>
+      </div>
+
+      <h1 class="display name">HAVIK<span>.</span></h1>
+
+      <div class="grid">
+        <figure class="frame photo">
+          <span class="x tl"></span><span class="x tr"></span><span class="x bl"></span><span class="x br"></span>
+          <Image src={hero} alt="" widths={[640, 960, 1440]} sizes="(min-width: 1024px) 60vw, 100vw" loading="eager" fetchpriority="high" />
+          <figcaption class="meta">CAM_01 · LIVE · NOVATION</figcaption>
+        </figure>
+
+        <div class="side">
+          <ul class="tags">
+            {tags.map((tg, i) => (
+              <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span>{t(tg.key)}<span aria-hidden="true">↗</span></a></li>
+            ))}
+          </ul>
+          <div class="actions">
+            <a href={href(lang, '/media')} class="btn btn--blue">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
+            <a href={href(lang, '/#contact')} class="btn">{t('cta')}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { border-bottom: 1px solid var(--ink); overflow: hidden; }
+  .inner { padding-block: 24px 48px; }
+  .hud { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+  .hud span { display: inline-flex; align-items: center; gap: 8px; }
+  .name {
+    font-size: clamp(88px, 26vw, 400px);
+    margin: 16px 0 24px -0.05em;
+  }
+  .name span { color: var(--blue); }
+
+  .grid { display: grid; gap: 24px; }
+  .photo { margin: 0; padding: 8px; }
+  .photo img { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; filter: grayscale(0.2) contrast(1.05); }
+  .photo figcaption { padding: 8px 4px 0; }
+
+  .side { display: flex; flex-direction: column; gap: 24px; position: relative; }
+  .tags { border-top: 1px solid var(--ink); }
+  .tags a {
+    display: flex; align-items: baseline; gap: 12px; padding: 14px 0;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--display); font-weight: 800; text-transform: uppercase;
+    font-size: clamp(28px, 4vw, 44px); letter-spacing: -0.02em; line-height: 1;
+    transition: color 0.2s, padding 0.3s var(--ease-out);
+  }
+  .tags a > span:last-child { margin-left: auto; font-family: var(--mono); font-size: 18px; }
+  .tags a:hover { color: var(--blue); padding-left: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+  @media (min-width: 1024px) {
+    .grid { grid-template-columns: 3fr 2fr; align-items: end; }
+    .name { margin-top: -0.02em; }
+  }
+</style>

@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+import { getLang, useT, href } from '../i18n/utils';
+
+const lang = getLang(Astro.url);
+const t = useT(lang);
+---
+<Base title="404">
+  <section class="grid-bg wrap">
+    <div class="container">
+      <div class="frame box">
+        <span class="x tl"></span><span class="x tr"></span><span class="x bl"></span><span class="x br"></span>
+        <p class="meta">ERR_404 · SIGNAL LOST</p>
+        <h1 class="display">404<span>//</span><br />Signal lost</h1>
+        {/* GitHub Pages serves one 404.html for every language, so it carries both. */}
+        <p lang="vi">{useT('vi')('404.text')}</p>
+        <p lang="en" class="meta">{useT('en')('404.text')}</p>
+        <div class="actions">
+          <a href={href('vi', '/')} class="btn btn--blue">← {useT('vi')('btn.home')}</a>
+          <a href={href('en', '/')} class="btn" lang="en">← {useT('en')('btn.home')}</a>
+          <a href={href(lang, '/media')} class="btn">{t('btn.viewWork')} ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .wrap { padding-block: clamp(40px, 10vw, 120px); }
+  .box { padding: clamp(20px, 4vw, 48px); display: grid; gap: 24px; }
+  h1 { font-size: clamp(56px, 14vw, 200px); }
+  h1 span { color: var(--orange); }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+</style>
