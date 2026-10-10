@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
+(window as any).ScrollTrigger = ScrollTrigger;
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 

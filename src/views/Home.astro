@@ -2,6 +2,7 @@
 // Home. Motion: scroll-driven only (ref marcuslorenzet).
 // Riso one-ink print only on the hero; everything else keeps its real colours.
 import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Ink from '../components/Ink.astro';
 import chanDung from '../assets/personal/chan-dung.webp';
@@ -52,13 +53,19 @@ const jitter = [[100, 0], [88, 8], [94, -4], [84, 12], [96, 2], [90, -6], [86, -
 const colRates = [0.92, 1, 0.84, 0.96];
 const colLead = ['6vh', '-10vh', '14vh', '-2vh'];
 
-// Interim featured list; Phase 2 will read this from the content collection.
-const featured = [
-  { img: cm, title: 'Corrupted Moonlight', kind: vi ? 'Ban nhạc synthwave' : 'Synthwave band', role: 'Founder · Producer', year: '2019—', tab: 'music', pos: '50% 35%' },
-  { img: bh, title: 'Beach/heaven', kind: 'Album', role: 'Mix · Master · Sound design', year: '2022', tab: 'music', pos: '50% 50%' },
-  { img: wc, title: 'Warcross', kind: vi ? 'Bìa sách & minh họa' : 'Book cover & illustration', role: 'Design', year: '2022', tab: 'visual', pos: '50% 50%' },
-  { img: nob, title: 'NÓB Network', kind: vi ? 'Mạng lưới nghệ sĩ Live Electronic' : 'Live electronic artist network', role: 'Founder · CEO', year: '2026', tab: 'marketing', pos: '50% 50%' },
-];
+// Featured work comes from the content collection (featured: true), in the order music → visual → marketing.
+const catOrder = { music: 0, visual: 1, marketing: 2 };
+const featured = (await getCollection('works', (w) => w.data.featured && !!w.data.cover))
+  .sort((a, b) => catOrder[a.data.category] - catOrder[b.data.category] || a.data.order - b.data.order || b.data.sort - a.data.sort)
+  .map((w) => ({
+    id: w.id,
+    img: w.data.cover!,
+    title: w.data.title,
+    kind: w.data.kind[lang],
+    role: w.data.role[lang],
+    year: w.data.year[lang],
+    tab: w.data.category,
+  }));
 ---
 <Base flush>
   <!-- HERO: dark portrait plate; the next section slides over it like a curtain -->
@@ -117,7 +124,7 @@ const featured = [
       <ol class="cases">
         {featured.map((f, i) => (
           <li class="case">
-            <a href={href(lang, `/media?tab=${f.tab}`)} class="case-link">
+            <a href={href(lang, `/media?tab=${f.tab}&work=${f.id}`)} class="case-link">
               <div class="case-media" style={`--r:${f.img.width / f.img.height}`}>
                 <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" />
               </div>
@@ -127,7 +134,7 @@ const featured = [
                 <dl class="case-meta meta">
                   <div><dt>Type</dt><dd>{f.kind}</dd></div>
                   <div><dt>Role</dt><dd>{f.role}</dd></div>
-                  <div><dt>Year</dt><dd>{f.year}</dd></div>
+                  {f.year && <div><dt>Year</dt><dd>{f.year}</dd></div>}
                 </dl>
                 <span class="case-cta">{t('card.view')}</span>
               </div>
