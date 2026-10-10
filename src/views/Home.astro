@@ -1,190 +1,280 @@
 ---
-// Phase 1: hero only. Remaining sections arrive in Phase 3.
-import { getImage } from 'astro:assets';
+// Home. Visual system: one-ink print (ref hermes-agent). Motion: scroll-driven only (ref marcuslorenzet).
 import Base from '../layouts/Base.astro';
+import Ink from '../components/Ink.astro';
 import hero from '../assets/home/hero.jpg';
+import cm from '../assets/work/corrupted-moonlight.webp';
+import bh from '../assets/work/beach-heaven.webp';
+import wc from '../assets/work/warcross.webp';
+import nob from '../assets/work/nob-network.jpg';
+import nn from '../assets/work/noise-night.webp';
+import open from '../assets/work/open.webp';
+import mare from '../assets/work/mare-crisisium.webp';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
 const t = useT(lang);
+const vi = lang === 'vi';
+
 const tags = [
   { key: 'spec.music', path: '/specialties/music' },
   { key: 'spec.visual', path: '/specialties/visual' },
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
-const heroImg = await getImage({ src: hero, width: 1800, format: 'webp', quality: 82 });
+
+// Facts, not slogans. Words wrapped in * are highlighted.
+const statement = vi
+  ? 'Làm *synthwave* từ 2019. Vẽ *poster* cho những đêm noise. Xây hệ thống *marketing* cho NÓB Network và iMind.'
+  : 'Making *synthwave* since 2019. Drawing *posters* for noise nights. Building *marketing* systems for NÓB Network and iMind.';
+const words = statement.split(' ').map((w) => ({ text: w.replaceAll('*', ''), hl: w.includes('*') }));
+
+// Thumbnails that fly past the statement: [image, left %, width vw, speed, start offset vh]
+const flyers = [
+  { src: nn, x: 4, w: 16, speed: 1.25, at: 30 },
+  { src: open, x: 74, w: 20, speed: 0.9, at: 10 },
+  { src: mare, x: 62, w: 13, speed: 1.6, at: 70 },
+  { src: wc, x: 16, w: 12, speed: 1.05, at: 95 },
+  { src: bh, x: 82, w: 11, speed: 1.4, at: 120 },
+];
+
+// Interim featured list; Phase 2 will read this from the content collection.
+const featured = [
+  { img: cm, title: 'Corrupted Moonlight', kind: vi ? 'Ban nhạc synthwave' : 'Synthwave band', role: 'Founder · Producer', year: '2019—', tab: 'music', pos: '50% 35%' },
+  { img: bh, title: 'Beach/heaven', kind: 'Album', role: vi ? 'Mix · Master · Sound design' : 'Mix · Master · Sound design', year: '2022', tab: 'music', pos: '50% 50%' },
+  { img: wc, title: 'Warcross', kind: vi ? 'Bìa sách & minh họa' : 'Book cover & illustration', role: 'Design', year: '2022', tab: 'visual', pos: '50% 40%' },
+  { img: nob, title: 'NÓB Network', kind: vi ? 'Mạng lưới nghệ sĩ Live Electronic' : 'Live electronic artist network', role: 'Founder · CEO', year: '2026', tab: 'marketing', pos: '50% 50%' },
+];
 ---
-<Base>
-  <section class="hero" data-src={heroImg.src}>
-    <div class="stage">
-      <div class="media">
-        <canvas aria-hidden="true"></canvas>
-        <img src={heroImg.src} alt="" class="fallback" />
-      </div>
+<Base flush>
+  <!-- HERO: riso-printed portrait on paper; the next section slides over it like a curtain -->
+  <section class="hero">
+    <div class="hero-photo">
+      <Ink src={hero} widths={[960, 1440, 2048]} sizes="(min-width: 1024px) 64vw, 100vw" loading="eager" position="50% 30%" contrast={1.5} />
+    </div>
 
-      <div class="container content">
-        <h1 class="display name" aria-label="Havik">
-          {'HAVIK'.split('').map((c) => <span class="ch" aria-hidden="true">{c}</span>)}<span class="ch dot" aria-hidden="true">.</span>
-        </h1>
-        <ul class="tags">
-          {tags.map((tg, i) => (
-            <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span>{t(tg.key)}</a></li>
-          ))}
-        </ul>
-      </div>
+    <ul class="hero-tags">
+      {tags.map((tg, i) => (
+        <li><a href={href(lang, tg.path)}><span class="meta">/0{i + 1}</span> {t(tg.key)}</a></li>
+      ))}
+    </ul>
 
-      <p class="readout meta" aria-hidden="true">RES <b>1:1</b></p>
+    <h1 class="display hero-name" aria-label="Havik">
+      <span class="line"><span>HAVIK</span></span>
+    </h1>
+  </section>
+
+  <!-- STATEMENT: words light up as you scroll; covers fly past -->
+  <section class="statement">
+    <div class="st-stage">
+      <div class="flyers" aria-hidden="true">
+        {flyers.map((f) => (
+          <div class="flyer" style={`left:${f.x}%;width:${f.w}vw;top:${f.at}vh`} data-speed={f.speed}>
+            <Ink src={f.src} widths={[320, 640]} sizes={`${f.w}vw`} />
+          </div>
+        ))}
+      </div>
+      <div class="container st-inner">
+        <p class="meta">[ /01 {vi ? 'Việc tôi làm' : 'What I do'} ]</p>
+        <p class="st-text">
+          {words.map((w) => <span class:list={['w', { hl: w.hl }]}>{w.text} </span>)}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SELECTED WORK -->
+  <section class="selected">
+    <div class="container">
+      <header class="sel-head">
+        <h2 class="display"><span class="line"><span>{vi ? 'Nổi bật.' : 'Selected.'}</span></span></h2>
+        <p class="meta">[ /02 {t('nav.media')} ]</p>
+      </header>
+
+      <ol class="cases">
+        {featured.map((f, i) => (
+          <li class="case">
+            <a href={href(lang, `/media?tab=${f.tab}`)} class="case-link">
+              <div class="case-media">
+                <div class="case-img"><Ink src={f.img} widths={[640, 1080, 1440]} sizes="(min-width: 1024px) 56vw, 100vw" position={f.pos} /></div>
+              </div>
+              <div class="case-info">
+                <span class="case-num display">{String(i + 1).padStart(2, '0')}</span>
+                <h3 class="case-title display">{f.title}</h3>
+                <dl class="case-meta meta">
+                  <div><dt>Type</dt><dd>{f.kind}</dd></div>
+                  <div><dt>Role</dt><dd>{f.role}</dd></div>
+                  <div><dt>Year</dt><dd>{f.year}</dd></div>
+                </dl>
+                <span class="case-cta">{t('card.view')}</span>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ol>
+
+      <a href={href(lang, '/media')} class="btn btn--blue all">{t('btn.viewAll')} <span aria-hidden="true">↗</span></a>
     </div>
   </section>
 </Base>
 
 <script>
-  import { gsap, ScrollTrigger } from '../scripts/smooth';
+  import { gsap } from '../scripts/smooth';
 
-  const section = document.querySelector<HTMLElement>('.hero')!;
-  const canvas = section.querySelector('canvas')!;
-  const media = section.querySelector<HTMLElement>('.media')!;
-  const readout = section.querySelector('.readout b')!;
-  const chars = [...section.querySelectorAll<HTMLElement>('.ch')];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const ctx = canvas.getContext('2d')!;
-  const small = document.createElement('canvas');
-  const sctx = small.getContext('2d', { willReadFrequently: true })!;
-
-  // Palette for the dither stage (style-guide: ink, vivid blue, pale paper).
-  const INK = [32, 32, 48], BLUE = [71, 55, 255], PAPER = [242, 242, 244];
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
-
-  const img = new Image();
-  img.decoding = 'async';
-  img.src = section.dataset.src!;
-
-  let progress = 0;
-  let W = 0, H = 0;
-
-  const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-  const map = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
-
-  function resize() {
-    const dpr = Math.min(devicePixelRatio || 1, 1.5);
-    W = canvas.width = Math.round(canvas.clientWidth * dpr);
-    H = canvas.height = Math.round(canvas.clientHeight * dpr);
-    draw();
-  }
-
-  function draw() {
-    if (!img.complete || !W) return;
-    const p = progress;
-
-    // 1 → 56 px blocks, eased so it holds clean for a moment then breaks apart.
-    const k = map(p, 0.08, 0.7);
-    const block = Math.max(1, Math.round(1 + 55 * k * k));
-    const sw = Math.max(1, Math.ceil(W / block));
-    const sh = Math.max(1, Math.ceil(H / block));
-    small.width = sw; small.height = sh;
-
-    // object-fit: cover, biased toward the upper third (the face).
-    const ir = img.naturalWidth / img.naturalHeight, cr = sw / sh;
-    let dw = sw, dh = sh, dx = 0, dy = 0;
-    if (ir > cr) { dw = sh * ir; dx = (sw - dw) / 2; } else { dh = sw / ir; dy = (sh - dh) * 0.3; }
-    sctx.imageSmoothingEnabled = true;
-    sctx.drawImage(img, dx, dy, dw, dh);
-
-    // Ordered dither into a 3-tone palette, cross-faded in once blocks are visible.
-    const mix = map(p, 0.25, 0.6);
-    if (mix > 0) {
-      const data = sctx.getImageData(0, 0, sw, sh);
-      const d = data.data;
-      for (let y = 0; y < sh; y++) {
-        for (let x = 0; x < sw; x++) {
-          const i = (y * sw + x) * 4;
-          const lum = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
-          const v = clamp(lum * 2.2) * 2 + BAYER[(y & 3) * 4 + (x & 3)] - 0.5;
-          const c = v < 0.5 ? INK : v < 1.5 ? BLUE : PAPER;
-          d[i] += (c[0] - d[i]) * mix;
-          d[i + 1] += (c[1] - d[i + 1]) * mix;
-          d[i + 2] += (c[2] - d[i + 2]) * mix;
-        }
-      }
-      sctx.putImageData(data, 0, 0);
-    }
-
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(small, 0, 0, sw, sh, 0, 0, sw * block, sh * block);
-
-    readout.textContent = block === 1 ? '1:1' : `${block}PX · ${Math.round(mix * 100)}% DITHER`;
-  }
-
-  img.addEventListener('load', () => { section.classList.add('ready'); resize(); });
-  addEventListener('resize', resize);
+  // Load: hero name rises out of its mask, tags follow.
+  gsap.from('.hero-name .line > span', { yPercent: 105, duration: 1.4, ease: 'expo.out', delay: 0.15 });
+  gsap.from('.hero-tags li', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08, delay: 0.6 });
+  gsap.from('.hero-photo', { opacity: 0, scale: 1.06, duration: 1.6, ease: 'power2.out' });
 
   if (!reduce) {
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.6,
-        onUpdate: (st) => { progress = st.progress; draw(); },
-      },
+    // Hero recedes while the statement slides over it.
+    gsap.timeline({ scrollTrigger: { trigger: '.statement', start: 'top bottom', end: 'top top', scrub: true } })
+      .to('.hero-photo', { scale: 1.12, yPercent: 8, ease: 'none' }, 0)
+      .to('.hero-name', { yPercent: -40, opacity: 0.25, ease: 'none' }, 0)
+      .to('.hero-tags', { opacity: 0, ease: 'none' }, 0);
+
+    // Statement: words fill from faint to ink, in reading order.
+    gsap.to('.st-text .w', {
+      opacity: 1,
+      stagger: 0.1,
+      ease: 'none',
+      scrollTrigger: { trigger: '.statement', start: 'top 20%', end: 'bottom bottom', scrub: true },
     });
 
-    // Photo gets shoved up and out of the frame in the last third.
-    tl.to(media, { yPercent: -18, scale: 1.12, ease: 'none', duration: 0.6 }, 0.4)
-      .to(media, { clipPath: 'inset(0% 0% 100% 0%)', ease: 'power2.in', duration: 0.25 }, 0.75);
-
-    // Letters drift apart at different speeds.
-    chars.forEach((c, i) => {
-      tl.to(c, { yPercent: -40 - i * 28, xPercent: (i - 2.5) * 14, ease: 'none', duration: 1 }, 0);
+    // Covers drift upward through the frame at their own speeds.
+    document.querySelectorAll<HTMLElement>('.flyer').forEach((el) => {
+      const s = Number(el.dataset.speed);
+      gsap.fromTo(el, { y: '40vh' }, {
+        y: `${-160 * s}vh`,
+        ease: 'none',
+        scrollTrigger: { trigger: '.statement', start: 'top bottom', end: 'bottom top', scrub: true },
+      });
     });
 
-    ScrollTrigger.refresh();
+    // Section title rises from its mask.
+    gsap.from('.sel-head .line > span', {
+      yPercent: 105, duration: 1.2, ease: 'expo.out',
+      scrollTrigger: { trigger: '.sel-head', start: 'top 80%' },
+    });
+
+    // Each case: image opens from a narrow slit, content inside drifts (parallax).
+    document.querySelectorAll<HTMLElement>('.case').forEach((c) => {
+      const media = c.querySelector('.case-media')!;
+      const img = c.querySelector('.case-img')!;
+      gsap.fromTo(media, { clipPath: 'inset(18% 12% 18% 12%)' }, {
+        clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
+        scrollTrigger: { trigger: c, start: 'top 95%', end: 'top 35%', scrub: true },
+      });
+      gsap.fromTo(img, { yPercent: -8 }, {
+        yPercent: 8, ease: 'none',
+        scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true },
+      });
+      gsap.from(c.querySelectorAll('.case-info > *'), {
+        y: 40, opacity: 0, stagger: 0.08, ease: 'none',
+        scrollTrigger: { trigger: c, start: 'top 80%', end: 'top 40%', scrub: true },
+      });
+    });
+  } else {
+    gsap.set('.st-text .w', { opacity: 1 });
   }
 </script>
 
 <style>
-  /* Tall track; the stage sticks while the scroll scrubs the effect. */
-  .hero { position: relative; height: 260vh; }
-  .stage {
-    position: sticky; top: var(--header-h);
-    height: calc(100svh - var(--header-h));
+  /* ---------- Hero ---------- */
+  .hero {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 560px;
     overflow: hidden;
-    display: flex; align-items: flex-end;
+    z-index: 0;
+    background: var(--paper-2);
+  }
+  .hero-photo { position: absolute; inset: 0 0 0 auto; width: 72%; transform-origin: 70% 40%; }
+  .hero-photo :global(.ink) { height: 100%; }
+  /* Dissolve the print (halftone included) into the paper on the left and bottom. */
+  .hero-photo {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 42%), linear-gradient(to top, transparent 0%, #000 40%);
+    -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent 0%, #000 42%), linear-gradient(to top, transparent 0%, #000 40%);
+            mask-composite: intersect;
   }
 
-  .media { position: absolute; inset: 0; transform-origin: 50% 0%; clip-path: inset(0 0 0 0); will-change: transform, clip-path; }
-  canvas, .fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .fallback { object-fit: cover; object-position: 50% 30%; }
-  .hero.ready .fallback { display: none; }
-  /* Soft dissolve into paper at the bottom so the type sits on light ground. */
-  .media::after {
-    content: ''; position: absolute; inset: auto 0 0; height: 45%;
-    background: linear-gradient(to bottom, transparent, var(--paper-2) 90%);
+  .hero-tags {
+    position: absolute; left: var(--gutter); top: calc(var(--header-h) + 32px);
+    display: grid; gap: 6px; z-index: 1;
+  }
+  .hero-tags a { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .hero-tags a:hover { color: var(--blue); }
+
+  .hero-name {
+    position: absolute; left: var(--gutter); bottom: 2vh; z-index: 1;
+    font-size: clamp(110px, 24vw, 380px);
+    font-weight: 300;
+    line-height: 0.8;
+    letter-spacing: -0.02em;
+    margin-left: -0.03em;
+    color: var(--ink);
   }
 
-  .content { position: relative; padding-block: 0 32px; }
-  .name {
-    font-size: clamp(56px, 13vw, 200px);
-    margin-left: -0.04em;
-    display: flex;
+  /* ---------- Statement ---------- */
+  .statement {
+    position: relative; z-index: 1;
+    background: var(--paper-2);
+    height: 260vh;
   }
-  .ch { display: inline-block; will-change: transform; }
-  .dot { color: var(--blue); }
-
-  .tags { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 16px; }
-  .tags a {
-    display: inline-flex; align-items: baseline; gap: 8px;
-    font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em;
-    border-bottom: 1px solid transparent;
-    transition: color 0.2s, border-color 0.2s;
+  .st-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; align-items: center; }
+  .st-inner { position: relative; z-index: 2; pointer-events: none; }
+  .st-text {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(40px, 6.4vw, 104px);
+    line-height: 0.98;
+    letter-spacing: -0.005em;
+    max-width: 14ch;
+    margin-top: 24px;
   }
-  .tags a:hover { color: var(--blue); border-color: var(--blue); }
+  .w { opacity: 0.14; }
+  .w.hl { color: var(--blue); }
 
-  .readout { position: absolute; right: var(--gutter); bottom: 36px; }
-  .readout b { color: var(--ink); font-weight: 500; }
+  .flyers { position: absolute; inset: 0; z-index: 1; }
+  .flyer { position: absolute; aspect-ratio: 4 / 5; will-change: transform; }
+  .flyer :global(.ink) { height: 100%; }
 
-  @media (prefers-reduced-motion: reduce) { .hero { height: auto; } .stage { position: relative; } }
-  @media (max-width: 639px) { .readout { display: none; } }
+  /* ---------- Selected ---------- */
+  .selected { position: relative; z-index: 1; background: var(--paper-2); padding-block: 12vh 16vh; }
+  .sel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 10vh; }
+  .sel-head h2 { font-size: clamp(72px, 13vw, 220px); font-weight: 300; }
+
+  .cases { display: grid; gap: 14vh; list-style: none; padding: 0; }
+  .case-link { display: grid; gap: 24px; }
+  .case-media { overflow: hidden; aspect-ratio: 16 / 10; }
+  .case-img { height: 116%; margin-top: -8%; }
+  .case-img :global(.ink) { height: 100%; }
+  .case-info { display: grid; align-content: start; gap: 16px; }
+  .case-num { font-size: clamp(56px, 7vw, 112px); color: var(--blue); line-height: 0.8; }
+  .case-title { font-size: clamp(36px, 4vw, 64px); font-weight: 400; line-height: 0.95; }
+  .case-meta { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .case-meta div { display: grid; grid-template-columns: 64px 1fr; }
+  .case-meta dt { color: var(--stone); }
+  .case-meta dd { margin: 0; color: var(--ink); }
+  .case-cta { font-size: 13px; letter-spacing: 0.08em; color: var(--blue); }
+  .case-link:hover .case-title { color: var(--blue); }
+
+  .all { margin-top: 12vh; }
+
+  @media (min-width: 1024px) {
+    .case-link { grid-template-columns: 7fr 4fr; gap: 5vw; align-items: start; }
+    .case:nth-child(even) .case-link { grid-template-columns: 4fr 7fr; }
+    .case:nth-child(even) .case-media { order: 2; }
+  }
+  @media (max-width: 767px) {
+    .hero-photo {
+      width: 100%;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 55%);
+              mask-image: linear-gradient(to top, transparent 0%, #000 55%);
+    }
+    .flyer { width: 34vw !important; }
+  }
 </style>

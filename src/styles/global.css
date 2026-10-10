@@ -1,4 +1,4 @@
-@import '@fontsource-variable/archivo/wght.css';
+@import '@fontsource-variable/big-shoulders-display';
 @import '@fontsource-variable/jetbrains-mono/wght.css';
 
 /* ---------- Tokens (style-guide.md) ---------- */
@@ -12,7 +12,7 @@
   --blue-pale: #d1cdff;
   --orange: #f75c03;
 
-  --display: 'Archivo Variable', system-ui, sans-serif;
+  --display: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif;
   --mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 
   --gutter: clamp(16px, 3vw, 40px);
@@ -56,7 +56,8 @@ body::before {
 
 /* ---------- Layout ---------- */
 .container { width: 100%; max-width: var(--max); margin-inline: auto; padding-inline: var(--gutter); }
-main { flex: 1; }
+main { flex: 1; padding-top: var(--header-h); }
+main.flush { padding-top: 0; }
 
 /* Graph-paper grid background */
 .grid-bg {
@@ -82,11 +83,17 @@ main { flex: 1; }
 /* ---------- Type ---------- */
 .display {
   font-family: var(--display);
-  font-weight: 900;
-  line-height: 0.85;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
+  font-weight: 300;
+  line-height: 0.88;
+  letter-spacing: -0.01em;
 }
+/* Line mask for reveal animations */
+.line { display: block; overflow: hidden; padding-bottom: 0.04em; }
+.line > span { display: inline-block; will-change: transform; }
+
+/* Blue flood sections */
+[data-theme='blue'] { background: var(--blue); color: var(--paper); }
+[data-theme='blue'] .meta { color: rgba(255, 255, 255, 0.7); }
 .meta {
   font-family: var(--mono);
   font-size: 12px;

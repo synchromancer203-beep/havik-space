@@ -94,19 +94,42 @@ const isActive = (path: string) => {
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
     matchMedia('(min-width: 1024px)').addEventListener('change', (e) => e.matches && set(false));
   }
+
+  // Header turns transparent/white while it sits over a blue-flood section.
+  const header = document.querySelector<HTMLElement>('.header')!;
+  const blues = [...document.querySelectorAll<HTMLElement>('[data-theme="blue"]')];
+  const probe = () => {
+    const y = header.offsetHeight / 2;
+    const over = blues.some((el) => { const r = el.getBoundingClientRect(); return r.top <= y && r.bottom >= y; });
+    header.classList.toggle('on-blue', over && menu?.hidden !== false);
+  };
+  addEventListener('scroll', probe, { passive: true });
+  addEventListener('resize', probe);
+  btn?.addEventListener('click', probe);
+  probe();
 </script>
 
 <style>
   .header {
-    position: sticky;
-    top: 0;
+    position: fixed;
+    inset: 0 0 auto;
     z-index: 50;
     background: var(--paper);
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid var(--line);
+    transition: background 0.4s, color 0.4s, border-color 0.4s;
   }
+  .header.on-blue { background: transparent; color: var(--paper); border-color: transparent; }
+  .header.on-blue .logo span { color: var(--orange); }
+  .header.on-blue .num { color: rgba(255, 255, 255, 0.6); }
+  .header.on-blue .menu, .header.on-blue .item { border-color: transparent; }
+  .header.on-blue .item > a:hover { background: rgba(255, 255, 255, 0.12); }
+  .header.on-blue .lang, .header.on-blue .lang a + a, .header.on-blue .burger { border-color: var(--paper); }
+  .header.on-blue .lang a.on { background: var(--paper); color: var(--blue); }
+  .header.on-blue .lang a:not(.on):hover { background: rgba(255, 255, 255, 0.12); }
+  .header.on-blue .burger i { background: var(--paper); }
   .bar { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: var(--header-h); }
 
-  .logo { font-family: var(--display); font-weight: 900; font-size: 26px; letter-spacing: -0.04em; line-height: 1; }
+  .logo { font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: 0.02em; line-height: 1; }
   .logo span { color: var(--blue); }
 
   .num { font-size: 10px; color: var(--stone); margin-right: 6px; }
@@ -164,7 +187,7 @@ const isActive = (path: string) => {
   .mobile > ul > li { border-bottom: 1px solid var(--line); }
   .mobile .row, .mobile summary {
     display: flex; align-items: center; padding: 18px 0;
-    font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.02em;
+    font-family: var(--display); font-weight: 500; font-size: 36px; text-transform: uppercase; letter-spacing: -0.02em;
     cursor: pointer; list-style: none;
   }
   .mobile summary::-webkit-details-marker { display: none; }

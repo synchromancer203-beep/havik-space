@@ -34,35 +34,37 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
-  .footer { background: var(--paper); border-top: 1px solid var(--ink); margin-top: auto; }
-  .top { display: grid; gap: 40px; padding-block: 48px 32px; }
-  .brand { display: grid; gap: 20px; justify-items: start; }
+  .footer { position: relative; z-index: 1; margin-top: auto; background: var(--paper); border-top: 1px solid var(--line); }
+  .top { display: grid; gap: 40px; padding-block: 72px 32px; }
+  .brand { display: grid; gap: 24px; justify-items: start; }
   .mail {
-    font-family: var(--display); font-weight: 800; letter-spacing: -0.02em;
-    font-size: clamp(18px, 2.4vw, 28px); line-height: 1.1; overflow-wrap: anywhere;
-    border-bottom: 2px solid var(--blue);
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(28px, 4vw, 56px); line-height: 1; overflow-wrap: anywhere;
+    border-bottom: 1px solid var(--blue);
+    padding-bottom: 6px;
   }
   .mail:hover { color: var(--blue); }
   nav ul { display: grid; gap: 6px; margin-top: 12px; }
-  nav a { text-transform: uppercase; font-size: 13px; letter-spacing: 0.06em; }
+  nav a { text-transform: uppercase; font-size: 13px; letter-spacing: 0.08em; }
   nav a:hover { color: var(--blue); }
 
   .wordmark {
-    font-size: clamp(40px, 12vw, 180px);
+    font-size: clamp(96px, 22vw, 360px);
+    font-weight: 300;
     line-height: 0.78;
-    margin-inline: -0.04em;
-    padding-top: 16px;
-    border-top: 1px solid var(--ink);
+    margin-inline: -0.03em;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
     overflow: hidden;
   }
   .wordmark span { color: var(--blue); }
 
   .bottom { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; padding-block: 20px 28px; }
   .bottom a:hover { color: var(--ink); }
-  .strip { height: 8px; background: var(--blue); }
+  .strip { height: 6px; background: var(--blue); }
 
   @media (min-width: 768px) {
     .top { grid-template-columns: 2fr 1fr; }
-    .bottom { padding-bottom: 88px; } /* room for the dock */
+    .bottom { padding-bottom: 88px; }
   }
 </style>

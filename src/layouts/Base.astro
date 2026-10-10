@@ -9,11 +9,13 @@ import { languages, defaultLang, type Lang } from '../i18n/ui';
 interface Props {
   title?: string;
   description?: string;
+  /** Let the first section run under the fixed header (used by full-bleed heroes). */
+  flush?: boolean;
 }
 
 const lang = getLang(Astro.url);
 const t = useT(lang);
-const { title, description = t('meta.description') } = Astro.props;
+const { title, description = t('meta.description'), flush = false } = Astro.props;
 const fullTitle = title ? `${title} | Havik` : 'Havik';
 const origin = Astro.site!.origin;
 const canonical = new URL(Astro.url.pathname, origin).href;
@@ -41,7 +43,7 @@ const canonical = new URL(Astro.url.pathname, origin).href;
   <body>
     <a href="#main" class="skip">{t('skip')}</a>
     <Header />
-    <main id="main">
+    <main id="main" class:list={{ flush }}>
       <slot />
     </main>
     <Footer />
