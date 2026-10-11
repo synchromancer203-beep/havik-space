@@ -15,16 +15,10 @@ import bh from '../assets/work/beach-heaven.webp';
 import wc from '../assets/work/warcross.webp';
 import nob from '../assets/work/nob-network.jpg';
 import open from '../assets/work/open.webp';
-import cm01 from '../assets/collage/cm-01.webp';
 import cm05 from '../assets/collage/cm-05.png';
 import cm09 from '../assets/collage/cm-09.webp';
-import cm11 from '../assets/collage/cm-11.webp';
 import cm13 from '../assets/collage/cm-13.webp';
-import cm15 from '../assets/collage/cm-15.webp';
 import mk02 from '../assets/collage/mukang-02.jpg';
-import mk03 from '../assets/collage/mukang-03.jpg';
-import op01 from '../assets/collage/open-01.webp';
-import op03 from '../assets/collage/open-03.webp';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
@@ -37,21 +31,23 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Collage behind the three fields: columns drift up at different rates so the frame
-// always stays full. Each tile gets a small width/offset jitter so it reads as loose,
-// not as a grid. Columns 3–4 are hidden on mobile.
-const baseColumns = [
-  [chanDung, cm11, wc, mk03, cm15],
-  [cm01, open, liveNov, bh, cm05],
-  [musicHero, cm09, nob, op03, cm13],
-  [musicLive, mk02, cm, op01, chanDung],
+// Collage behind the three fields: 12 photos, each shown once, hand-placed with breathing
+// room. One layer drifts up at roughly scroll speed while the stage is pinned.
+// [left %, top vw, width vw] — all in width units so gaps hold at any screen ratio.
+const tiles = [
+  { src: chanDung,  d: [5, 2, 17],   m: [4, 0, 38] },
+  { src: musicHero, d: [32, 6, 21],  m: [54, 8, 42] },
+  { src: cm09,      d: [64, 0, 13],  m: [10, 46, 30] },
+  { src: open,      d: [81, 8, 16],  m: [52, 47, 44] },
+  { src: liveNov,   d: [12, 26, 21], m: [52, 84, 42] },
+  { src: cm05,      d: [40, 27, 13], m: [4, 94, 34] },
+  { src: nob,       d: [58, 24, 19], m: [46, 117, 46] },
+  { src: wc,        d: [83, 25, 12], m: [6, 136, 32] },
+  { src: musicLive, d: [3, 46, 22],  m: [48, 156, 46] },
+  { src: mk02,      d: [30, 44, 18], m: [4, 185, 42] },
+  { src: cm,        d: [54, 47, 20], m: [52, 190, 42] },
+  { src: cm13,      d: [82, 45, 12], m: [24, 222, 30] },
 ];
-// Each column runs twice (second pass rotated) so it is always taller than its travel.
-const columns = baseColumns.map((c) => [...c, ...c.slice(2), ...c.slice(0, 2)]);
-// Deterministic jitter so builds are stable: [width %, x offset %].
-const jitter = [[100, 0], [88, 8], [94, -4], [84, 12], [96, 2], [90, -6], [86, -10]];
-const colRates = [0.92, 1, 0.84, 0.96];
-const colLead = ['6vh', '-10vh', '14vh', '-2vh'];
 
 // Featured work comes from the content collection (featured: true), in the order music → visual → marketing.
 const catOrder = { music: 0, visual: 1, marketing: 2 };
@@ -87,16 +83,12 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   <section class="fields">
     <div class="f-stage">
       <div class="collage" aria-hidden="true">
-        {columns.map((col, ci) => (
-          <div class="col" data-rate={colRates[ci]} style={`margin-top:${colLead[ci]}`}>
-            {col.map((img, ii) => {
-              const [w, x] = jitter[(ci * 2 + ii) % jitter.length];
-              return (
-                <div class="tile" style={`width:${w}%;transform:translateX(${x}%);aspect-ratio:${img.width}/${img.height}`}>
-                  <Image src={img} alt="" widths={[400, 720]} sizes="(min-width: 768px) 25vw, 50vw" />
-                </div>
-              );
-            })}
+        {tiles.map((tl) => (
+          <div
+            class="tile"
+            style={`--dx:${tl.d[0]}%;--dy:${tl.d[1]}vw;--dw:${tl.d[2]}vw;--mx:${tl.m[0]}%;--my:${tl.m[1]}vw;--mw:${tl.m[2]}vw;aspect-ratio:${tl.src.width}/${tl.src.height}`}
+          >
+            <Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 24vw, 48vw" />
           </div>
         ))}
       </div>
@@ -169,18 +161,15 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
       opacity: 1,
       stagger: 0.5,
       ease: 'none',
-      scrollTrigger: { trigger: '.fields', start: 'top 30%', end: 'bottom bottom', scrub: true },
+      scrollTrigger: { trigger: '.fields', start: 'top 20%', end: 'bottom bottom', scrub: true },
     });
 
-    // Collage columns drift upward; each travels its own height so none runs out of tiles.
-    document.querySelectorAll<HTMLElement>('.col').forEach((col) => {
-      const rate = Number(col.dataset.rate);
-      // Travel 1.5 screens at most; columns are ≥ 2.7 screens tall, so the bottom never shows.
-      gsap.fromTo(col, { y: () => innerHeight * 0.15 }, {
-        y: () => -Math.min(col.offsetHeight - innerHeight * 1.1, innerHeight * 1.5) * rate,
-        ease: 'none',
-        scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true },
-      });
+    // While the stage is pinned, the collage layer rises from below to above the frame at
+    // about scroll speed, so each photo passes through exactly once.
+    gsap.fromTo('.collage', { y: () => innerHeight * 0.4 }, {
+      y: () => -(document.querySelector<HTMLElement>('.collage')!.offsetHeight - innerHeight * 0.2),
+      ease: 'none',
+      scrollTrigger: { trigger: '.fields', start: 'top top', end: 'bottom bottom', scrub: true, invalidateOnRefresh: true },
     });
 
     gsap.from('.sel-head .line > span', {
@@ -249,7 +238,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
       radial-gradient(90% 60% at 85% 10%, rgba(71, 55, 255, 0.05), transparent 60%),
       linear-gradient(180deg, #f5f5f7 0%, #ececf0 100%);
     position: relative; z-index: 1;
-    height: 260vh;
+    height: 220vh;
     background: var(--fields-bg);
     /* Lift the curtain off the hero. */
     box-shadow: 0 -24px 48px rgba(7, 6, 26, 0.28);
@@ -263,13 +252,16 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   }
 
   .collage {
-    position: absolute; inset: 0;
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 14px; padding-inline: 14px;
-    align-items: start;
+    position: absolute; left: 0; right: 0; top: 0;
+    height: 62vw;
+    will-change: transform;
   }
-  .col { display: grid; gap: 14px; justify-items: center; will-change: transform; }
-  .tile { overflow: hidden; box-shadow: 0 18px 40px -18px rgba(32, 32, 48, 0.35); }
+  .tile {
+    position: absolute;
+    left: var(--dx); top: var(--dy); width: var(--dw);
+    overflow: hidden;
+    box-shadow: 0 18px 40px -18px rgba(32, 32, 48, 0.35);
+  }
   .tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
   /* White + difference: dark on the paper, inverted wherever a photo sits underneath. */
@@ -336,9 +328,8 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
     .hero-cta { left: var(--gutter); right: auto; }
-    .collage { grid-template-columns: repeat(2, 1fr); gap: 10px; padding-inline: 10px; }
-    .col { gap: 10px; }
-    .col:nth-child(n + 3) { display: none; }
+    .collage { height: 264vw; }
+    .tile { left: var(--mx); top: var(--my); width: var(--mw); }
     .hero-cta { bottom: calc(6vh + 22vw + 16px); }
   }
 </style>
