@@ -2,6 +2,7 @@
 // Home, as frames (scripts/frames.ts): hero → the three fields → one frame per featured work → footer.
 // Riso one-ink print only on the hero; everything else keeps its real colours.
 import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Ink from '../components/Ink.astro';
@@ -16,6 +17,12 @@ import nob from '../assets/work/nob-network.jpg';
 import open from '../assets/work/open.webp';
 import cm05 from '../assets/collage/cm-05.png';
 import cm09 from '../assets/collage/cm-09.webp';
+import cm11 from '../assets/collage/cm-11.webp';
+import cm15 from '../assets/collage/cm-15.webp';
+import mukang from '../assets/collage/mukang-02.jpg';
+import open03 from '../assets/collage/open-03.webp';
+import cmStage from '../assets/work/corrupted-moonlight.webp';
+import mare from '../assets/work/mare-crisisium.webp';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
@@ -28,21 +35,31 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Collage beside the three fields. [left %, top %, width] for desktop (d) and mobile (m); the width
-// is in vw, shrunk on screens shorter than the layout was drawn for (16:10 desktop, 390×844 phone).
-// Desktop: three staggered columns in the right half, so the words on the left read clear of
-// the photos. Mobile: photos fill the top, words sit bottom-left; m: null = desktop only.
-const tiles = [
-  { src: musicHero, d: [52, 6, 14],  m: [6, 20, 42] },
-  { src: cm09,      d: [54, 32, 10], m: [72, 2, 22] },
-  { src: nob,       d: [52, 66, 14], m: [10, 40, 40] },
-  { src: chanDung,  d: [69, 2, 11],  m: [4, 2, 26] },
-  { src: open,      d: [68, 30, 14], m: [54, 23, 42] },
-  { src: wc,        d: [71, 58, 10], m: null },
-  { src: liveNov,   d: [84, 12, 13], m: [54, 43, 40] },
-  { src: cm05,      d: [86, 38, 10], m: null },
-  { src: musicLive, d: [84, 72, 13], m: [34, 6, 34] },
+// Collage around the three fields, in three depths: b (back: small, blurred, faded), m (middle:
+// softly blurred) and f (front: sharp, shadowed). Back and middle photos may pass under the
+// words, which invert over them; front photos are placed clear of the words. Each depth moves at
+// its own pace when the frame scrolls in or out, and some photos run off the screen edge.
+// [left %, top %, width] for desktop (d) and mobile (m), null = not on that layout. The width is in
+// vw, shrunk on screens shorter than the layout was drawn for (16:10 desktop, 390×844 phone).
+type Tile = { src: ImageMetadata; z: 'b' | 'm' | 'f'; d: number[] | null; m: number[] | null };
+const tiles: Tile[] = [
+  { src: cm15,      z: 'b', d: [20, 6, 10],   m: [40, 31, 28] },
+  { src: open03,    z: 'b', d: [64, 20, 11],  m: [58, 66, 30] },
+  { src: mukang,    z: 'b', d: [34, 64, 15],  m: [-4, 50, 40] },
+  { src: mare,      z: 'b', d: [93, 62, 9],   m: null },
+  { src: cm11,      z: 'b', d: [66, 88, 12],  m: [-8, 26, 22] },
+  { src: cmStage,   z: 'b', d: [-3, 70, 13],  m: null },
+  { src: cm05,      z: 'm', d: [40, 30, 8],   m: [52, 50, 20] },
+  { src: wc,        z: 'm', d: [29, 44, 9],   m: [30, 88, 22] },
+  { src: musicHero, z: 'f', d: [55, 3, 15],   m: [38, 0, 38] },
+  { src: chanDung,  z: 'f', d: [76, -4, 11],  m: [4, 2, 28] },
+  { src: liveNov,   z: 'f', d: [86, 28, 16],  m: [12, 19, 36] },
+  { src: open,      z: 'f', d: [60, 39, 15],  m: [78, 40, 32] },
+  { src: cm09,      z: 'f', d: [53, 70, 10],  m: [80, 5, 22] },
+  { src: nob,       z: 'f', d: [72, 66, 17],  m: [4, 70, 42] },
+  { src: musicLive, z: 'f', d: [8, 88, 15],   m: [50, 76, 44] },
 ];
+const pos = (k: 'd' | 'm', v: number[] | null) => (v ? `--${k}x:${v[0]}%;--${k}y:${v[1]}%;--${k}w:${v[2]};` : '');
 
 // Featured work comes from the content collection (featured: true), in the order music → visual → marketing.
 const catOrder = { music: 0, visual: 1, marketing: 2 };
@@ -74,30 +91,33 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     <a href={href(lang, '/media')} class="btn btn--signal hero-cta">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
   </Frame>
 
-  <!-- FIELDS: three words beside a collage; the invert only shows if a photo ever ends up under a word -->
+  <!-- FIELDS: three words in a layered collage; the words invert over the photos that pass under them -->
   <Frame class="fields" inner="f-stage">
     <div class="collage" aria-hidden="true">
       {tiles.map((tl, i) => (
         <div
-          class:list={['tile', { 'd-only': !tl.m }]}
+          class:list={['tile', `tile--${tl.z}`, { 'no-d': !tl.d, 'no-m': !tl.m }]}
           data-enter
           data-depth
-          style={`--dx:${tl.d[0]}%;--dy:${tl.d[1]}%;--dw:${tl.d[2]};${tl.m ? `--mx:${tl.m[0]}%;--my:${tl.m[1]}%;--mw:${tl.m[2]};` : ''}--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
+          style={`${pos('d', tl.d)}${pos('m', tl.m)}--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
         >
-          <div class="tile-in"><Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
+          <div class="tile-in"><Image src={tl.src} alt="" widths={tl.z === 'f' ? [400, 720] : [320]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
         </div>
       ))}
     </div>
-    <ul class="container f-list" data-enter="rise">
-      {fields.map((f, i) => (
-        <li>
-          <a href={href(lang, f.path)} class="f-word">
-            <span class="f-num">{i + 1}.</span>
-            <span class="display line"><span>{t(f.key)}</span></span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <!-- The words twice, stacked: a paper-coloured copy under the photos gives the inverting copy on
+         top a solid backdrop, so it stays dark (and inverted over photos) while the frame's own
+         background fades in and out during a scroll. -->
+    <div class="f-words">
+      <ul class="container f-list f-under" aria-hidden="true" data-enter="rise-twin">
+        {fields.map((f) => <li><span class="f-word"><span class="display line"><span>{t(f.key)}</span></span></span></li>)}
+      </ul>
+      <ul class="container f-list f-top" data-enter="rise">
+        {fields.map((f) => (
+          <li><a href={href(lang, f.path)} class="f-word"><span class="display line"><span>{t(f.key)}</span></span></a></li>
+        ))}
+      </ul>
+    </div>
   </Frame>
 
   <!-- SELECTED WORK: one frame per featured piece -->
@@ -179,33 +199,43 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     background: var(--frame-bg); opacity: var(--bgo, 1);
     translate: 0 calc(var(--fy, 0) * -1svh);
   }
-  .collage { position: absolute; inset: var(--header-h) 0 0; }
+  .collage { position: absolute; inset: var(--header-h) 0 0; z-index: 1; }
   .tile {
+    --z: 0.26; /* how far ahead of the text this depth runs while the frame scrolls (svh per svh) */
     position: absolute;
     left: var(--dx); top: var(--dy); width: min(calc(var(--dw) * 1vw), calc(var(--dw) * 1.6svh));
-    box-shadow: 0 18px 40px -18px rgba(32, 32, 48, 0.35);
   }
-  /* A slow drift keeps the collage alive while it is on screen. */
-  .tile-in { height: 100%; overflow: hidden; animation: drift 9s ease-in-out calc(var(--i) * -1.3s) infinite alternate; }
+  html:global(.paged) .collage .tile { translate: 0 calc(var(--fy, 0) * var(--z) * 1svh); }
+  .tile--f { box-shadow: 0 24px 48px -20px rgba(32, 32, 48, 0.45); }
+  /* Fades go on the inner box: the entrance animates the tile's own opacity. */
+  .tile--m { --z: 0.14; }
+  .tile--m .tile-in { opacity: 0.9; }
+  .tile--b { --z: 0.05; }
+  .tile--b .tile-in { opacity: 0.7; }
+  .no-d { display: none; }
+  /* A slow drift keeps the collage alive while it is on screen; the back drifts least. */
+  .tile-in { height: 100%; overflow: hidden; will-change: transform; animation: drift 9s ease-in-out calc(var(--i) * -1.3s) infinite alternate; }
+  .tile--m .tile-in { animation-duration: 12s; }
+  .tile--b .tile-in { animation-duration: 15s; }
   .tile-in :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* The blur sits on the image, inside the drifting box, so it is drawn once and only moved. */
+  .tile--m :global(img) { filter: blur(1.5px) saturate(0.9); }
+  .tile--b :global(img) { filter: blur(5px) saturate(0.7); transform: scale(1.06); }
   @keyframes drift { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
 
-  /* White + difference: dark on the paper. The layout keeps photos clear of the words, so the
-     inversion is only a fallback for where they still meet (short screens, the drift). */
-  .f-list {
-    position: relative; z-index: 2;
-    display: grid; gap: 1vh;
-    color: #fff;
-    mix-blend-mode: difference;
-  }
-  .f-word { display: inline-flex; align-items: flex-start; gap: 16px; }
+  /* The two copies of the words share one grid cell. Under: paper-coloured, below the photos.
+     Top: white + difference, above everything: dark on the paper, inverted over any photo. */
+  .f-words { display: grid; }
+  .f-list { grid-area: 1 / 1; display: grid; gap: 1vh; position: relative; }
+  .f-under { z-index: 0; color: #f0f0f3; }
+  .f-top { z-index: 2; color: #fff; mix-blend-mode: difference; }
+  .f-word { display: inline-flex; }
   .f-word .display {
-    font-size: clamp(64px, min(9vw, 18vh), 160px);
+    font-size: clamp(64px, min(10vw, 18vh), 170px);
     font-weight: 800;
     line-height: 1.12; /* room for stacked Vietnamese diacritics (Ồ, Ạ) */
     text-transform: uppercase;
   }
-  .f-num { font-family: var(--mono); font-size: clamp(14px, 1.4vw, 20px); padding-top: 1.2em; }
 
   /* ---------- Selected: one frame per work ---------- */
   .case {
@@ -251,9 +281,8 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     }
     .hero-cta { left: var(--gutter); right: auto; bottom: calc(6vh + 22vw + 16px); }
     .tile { left: var(--mx); top: var(--my); width: min(calc(var(--mw) * 1vw), calc(var(--mw) * 0.462svh)); }
-    .tile.d-only { display: none; }
-    /* Words at the bottom-left, under the photos. */
-    .fields :global(.f-stage) { justify-content: flex-end; padding-bottom: 5svh; }
+    .no-d { display: block; }
+    .no-m { display: none; }
     .f-word .display { font-size: clamp(48px, min(16.5vw, 8.5svh), 72px); }
   }
 </style>
