@@ -158,8 +158,11 @@ function step(dir: number) {
   dir > 0 ? next() : prev();
 }
 
+/** Something modal is open (image viewer, mobile menu): frames stay where they are. */
+const held = () => !!document.querySelector('dialog[open], #mobile-menu:not([hidden])');
+
 function onWheel(e: WheelEvent) {
-  if (e.ctrlKey) return; // pinch-zoom
+  if (e.ctrlKey || held()) return; // pinch-zoom
   const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : 0;
   if (!d) return;
   const dir = Math.sign(d);
@@ -185,6 +188,7 @@ function onTouchStart(e: TouchEvent) {
   touchInner = false;
 }
 function onTouchMove(e: TouchEvent) {
+  if (held()) return;
   const dy = touchY - e.touches[0].clientY;
   const f = frames[index];
   if (f && canScroll(f, Math.sign(dy) || 1)) { touchInner = true; return; } // native scroll inside the frame
@@ -193,7 +197,7 @@ function onTouchMove(e: TouchEvent) {
 function onTouchEnd(e: TouchEvent) {
   const t = e.changedTouches[0];
   const dy = touchY - t.clientY;
-  if (touchInner || Math.abs(dy) < 48 || Math.abs(dy) < Math.abs(touchX - t.clientX)) return;
+  if (touchInner || held() || Math.abs(dy) < 48 || Math.abs(dy) < Math.abs(touchX - t.clientX)) return;
   step(Math.sign(dy));
 }
 
@@ -201,7 +205,7 @@ function onKey(e: KeyboardEvent) {
   if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
   const t = e.target as HTMLElement;
   if (t.closest('input, textarea, select, [contenteditable]')) return;
-  if (document.querySelector('#mobile-menu:not([hidden])')) return;
+  if (held()) return;
   const f = frames[index];
   let dir = 0;
   if (['ArrowDown', 'PageDown'].includes(e.key) || (e.key === ' ' && !e.shiftKey)) dir = 1;
