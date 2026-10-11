@@ -38,7 +38,6 @@ const L = {
   results: vi ? 'Kết quả' : 'Results',
   next: vi ? 'Tác phẩm tiếp theo' : 'Next work',
   gallery: vi ? 'Thư viện ảnh' : 'Gallery',
-  drag: vi ? 'Kéo ngang để xem hết ↔' : 'Drag sideways to see all ↔',
   open: vi ? 'Xem ảnh lớn' : 'View image',
   prev: vi ? 'Ảnh trước' : 'Previous image',
   nextImg: vi ? 'Ảnh sau' : 'Next image',
@@ -151,8 +150,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
                   ))}
                 </div>
                 <div class="g-foot meta">
-                  <span>{w.data.title} · {gallery.length}</span>
-                  <span class="g-hint" hidden>{L.drag}</span>
+                  <span>{w.data.title}</span>
                   {nextLink}
                 </div>
               </Frame>

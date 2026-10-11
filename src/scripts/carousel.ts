@@ -52,7 +52,6 @@ class Carousel {
     });
     this.loop = W > 0 && Math.max(...this.lens) - 1 > W;
     this.track.classList.toggle('is-loop', this.loop);
-    this.track.closest('.frame')?.querySelector<HTMLElement>('.g-hint')?.toggleAttribute('hidden', !this.loop);
     if (this.loop) {
       this.rows.forEach((r, k) => {
         const run = [...r.children];
