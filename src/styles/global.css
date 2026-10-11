@@ -138,6 +138,25 @@ main.flush { padding-top: 0; }
 }
 .skip:focus { top: 8px; }
 
+/* ---------- Page transition (scripts/transition.ts) ---------- */
+/* Curtain parks below the viewport; above header/dock/menu, under the paper noise. */
+.pt {
+  position: fixed; inset: 0; z-index: 90;
+  background: var(--blue);
+  transform: translateY(100%);
+  pointer-events: none;
+  will-change: transform;
+}
+/* Arrived covered. If the script never runs, lift the curtain anyway after 3s. */
+html.pt-in .pt { transform: none; animation: pt-safety 0.8s cubic-bezier(0.76, 0, 0.24, 1) 3s forwards; }
+@keyframes pt-safety { to { transform: translateY(-100%); } }
+
+/* Keep the old frame on screen until the next document paints (no white flash); back/forward crossfades. */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

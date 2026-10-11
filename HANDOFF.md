@@ -16,6 +16,7 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 ## Done
 - Phase 0–3: infra, layout/i18n, `/media` (tabs `?tab=`, filters, masonry, lightbox, deep link `?work=<slug>`), home, `/specialties` + 3 sub-pages, `/about`, 404, privacy.
 - No `/contact` page by owner's choice: email + social icons in footer (`#contact`).
+- Phase 4: page transitions. `src/scripts/transition.ts` + `.pt` curtain in `Base.astro`: internal link click → Vivid Blue curtain rises → navigate → next page paints covered (sessionStorage flag read by inline `<head>` script) → curtain lifts. GSAP global timeline is paused while covered so entrance tweens play on reveal; `ready` promise exported for things that must wait (Media deep-link lightbox). `@view-transition` keeps the frame between documents; Astro prefetch on hover. Skipped for reduced motion, new-tab/modifier clicks, external/mailto, same-page hashes; opt out per link with `data-no-transition`. bfcache restore resets the curtain.
 
 ## Design rules (owner feedback — keep)
 - Colours only from style guide: paper bg `#F2F2F4` with very subtle gradients, Deep Blue `#202030` text, Vivid Blue `#4737FF` accent, Vivid Orange `#F75C03` ~10% (CTAs).
@@ -26,6 +27,5 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 - Vietnamese diacritics: heading masks (`.line`) have top padding — keep it.
 
 ## Next
-- Phase 4: page transitions.
 - Phase 5: SEO (meta per page, OG images, sitemap.xml, robots.txt), Lighthouse ≥90, analytics (Cloudflare/Umami).
 - Missing data: year + credit for the 2 websites (pccc-truc-binh, thanh-loi-dental), iMind cover image, owner review of all EN text and 3 inferred skills (Mixing & Mastering, Sound Design, Illustration).

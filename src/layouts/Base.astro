@@ -39,8 +39,18 @@ const canonical = new URL(Astro.url.pathname, origin).href;
     <meta property="og:locale" content={lang === 'vi' ? 'vi_VN' : 'en_US'} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#ffffff" />
+    <script is:inline>
+      // Arrived through a page transition: paint with the curtain already down (see scripts/transition.ts).
+      try {
+        var pt = +sessionStorage.getItem('pt');
+        sessionStorage.removeItem('pt');
+        if (Date.now() - pt < 5000 && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('pt-in');
+      } catch (e) {}
+    </script>
+    <script>import '../scripts/transition';</script>
   </head>
   <body>
+    <div class="pt" aria-hidden="true"></div>
     <a href="#main" class="skip">{t('skip')}</a>
     <Header />
     <main id="main" class:list={{ flush }}>

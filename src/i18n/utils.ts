@@ -9,12 +9,13 @@ export function useT(lang: Lang) {
   return (key: UIKey) => ui[lang][key] ?? ui[defaultLang][key];
 }
 
-/** Build a localized href from a language-neutral path like "/about" or "/media?tab=music". */
+/** Build a localized href from a language-neutral path like "/about", "/media?tab=music" or "/#contact". */
 export function href(lang: Lang, path: string) {
-  const [p, query] = path.split('?');
+  const [rest, hash] = path.split('#');
+  const [p, query] = rest.split('?');
   let clean = p === '/' ? '/' : `/${p.replace(/^\/|\/$/g, '')}/`;
   if (lang !== defaultLang) clean = clean === '/' ? `/${lang}/` : `/${lang}${clean}`;
-  return query ? `${clean}?${query}` : clean;
+  return clean + (query ? `?${query}` : '') + (hash ? `#${hash}` : '');
 }
 
 /** Strip the language prefix, returning the neutral path. */
