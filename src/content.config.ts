@@ -50,6 +50,9 @@ const posts = defineCollection({
       description: z.string(),
       cover: image(),
       coverAlt: z.string(),
+      /** Optional second photo, shown beside the cover in the post's head. */
+      cover2: image().optional(),
+      cover2Alt: z.string().optional(),
     }),
 });
 

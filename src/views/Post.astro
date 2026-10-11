@@ -1,5 +1,6 @@
 ---
-// /blog/<slug>: one post as frames. Head: date, title and the cover. Body: the text in a reading
+// /blog/<slug>: one post as frames. Head: date, title and the cover (with a second photo beside it
+// when the post has one). Body: the text in a reading
 // column (it scrolls inside its frame), then a link back to the list. Footer last.
 import { Image, getImage } from 'astro:assets';
 import { render } from 'astro:content';
@@ -15,6 +16,12 @@ const vi = lang === 'vi';
 const { Content } = await render(post);
 // Share image: the cover, as a 1200px JPEG.
 const share = await getImage({ src: post.data.cover, width: 1200, format: 'jpg' });
+// Head photos side by side at the same height: each column as wide as its photo's proportions.
+const shots = [
+  { src: post.data.cover, alt: post.data.coverAlt },
+  ...(post.data.cover2 ? [{ src: post.data.cover2, alt: post.data.cover2Alt ?? '' }] : []),
+].map((s) => ({ ...s, r: s.src.width / s.src.height }));
+const r = shots.reduce((a, s) => a + s.r, 0);
 ---
 <Base title={post.data.title} description={post.data.description} image={share.src}>
   <Frame class="ph" inner="container ph-in">
@@ -22,8 +29,10 @@ const share = await getImage({ src: post.data.cover, width: 1200, format: 'jpg' 
       <span class="meta" data-enter>{formatDate(post.data.date, lang)}</span>
       <h1 class="display ph-title" data-enter="rise"><span class="line"><span>{post.data.title}</span></span></h1>
     </div>
-    <div class="ph-cover" data-enter data-depth style={`--r:${post.data.cover.width / post.data.cover.height}`}>
-      <Image src={post.data.cover} alt={post.data.coverAlt} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" />
+    <div class="ph-cover" data-enter data-depth style={`--r:${r};--n:${shots.length};grid-template-columns:${shots.map((x) => `${x.r}fr`).join(' ')}`}>
+      {shots.map((x) => (
+        <div class="ph-shot"><Image src={x.src} alt={x.alt} widths={[640, 1080, 1600]} sizes={`(min-width: 1024px) ${Math.round(50 / shots.length)}vw, ${Math.round(100 / shots.length)}vw`} loading="eager" /></div>
+      ))}
     </div>
   </Frame>
 
@@ -42,8 +51,10 @@ const share = await getImage({ src: post.data.cover, width: 1200, format: 'jpg' 
   .ph-title { font-size: clamp(44px, min(6.4vw, 11vh), 120px); font-weight: 800; line-height: 1; text-wrap: balance; }
   /* The mask's room for stacked marks (Ồ, Ữ) is on .line; long titles wrap inside it. */
   .ph-title .line > span { display: inline; }
-  .ph-cover { aspect-ratio: var(--r); width: min(100%, calc(40svh * var(--r))); box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
-  .ph-cover :global(img) { display: block; width: 100%; height: 100%; }
+  /* The row's width is the photos' summed proportions times its height, plus the gaps. */
+  .ph-cover { --g: 12px; display: grid; gap: var(--g); width: min(100%, calc(40svh * var(--r) + (var(--n) - 1) * var(--g))); }
+  .ph-shot { box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  .ph-shot :global(img) { display: block; width: 100%; height: auto; }
 
   /* Body: a reading column. */
   .pb :global(.pb-in) { padding-top: calc(var(--header-h) + 6vh); padding-bottom: 10vh; gap: 48px; align-items: center; }
@@ -57,6 +68,6 @@ const share = await getImage({ src: post.data.cover, width: 1200, format: 'jpg' 
   @media (min-width: 1024px) {
     .ph :global(.ph-in) { flex-direction: row; align-items: center; gap: 5vw; }
     .ph-text { flex: 1; }
-    .ph-cover { flex: none; width: min(46vw, calc(64svh * var(--r))); }
+    .ph-cover { flex: none; width: min(50vw, calc(64svh * var(--r) + (var(--n) - 1) * var(--g))); }
   }
 </style>
