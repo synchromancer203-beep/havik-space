@@ -20,9 +20,9 @@ const all = (await getCollection('works')).sort(
 );
 
 const tabs = [
-  { id: 'music', label: t('media.music') },
-  { id: 'visual', label: t('media.visual') },
-  { id: 'marketing', label: t('media.marketing') },
+  { id: 'music', label: t('spec.music') },
+  { id: 'visual', label: t('spec.visual') },
+  { id: 'marketing', label: t('spec.marketing') },
 ] as const;
 
 const groupLabel: Record<string, string> = vi
@@ -38,7 +38,6 @@ const L = {
   results: vi ? 'Kết quả' : 'Results',
   next: vi ? 'Tác phẩm tiếp theo' : 'Next work',
   gallery: vi ? 'Thư viện ảnh' : 'Gallery',
-  drag: vi ? 'Kéo ngang để xem hết ↔' : 'Drag sideways to see all ↔',
   open: vi ? 'Xem ảnh lớn' : 'View image',
   prev: vi ? 'Ảnh trước' : 'Previous image',
   nextImg: vi ? 'Ảnh sau' : 'Next image',
@@ -61,7 +60,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
       <div class="m-tabs" role="tablist">
         {tabs.map((tb, i) => (
           <button role="tab" class="m-tab" data-tab={tb.id} aria-selected={i === 0 ? 'true' : 'false'}>
-            <span class="num">{i + 1}.</span>{tb.label}<span class="m-count">{byTab[tb.id].length}</span>
+            <span class="num">{i + 1}.</span>{tb.label}
           </button>
         ))}
       </div>
@@ -151,8 +150,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
                   ))}
                 </div>
                 <div class="g-foot meta">
-                  <span>{w.data.title} · {gallery.length}</span>
-                  <span class="g-hint" hidden>{L.drag}</span>
+                  <span>{w.data.title}</span>
                   {nextLink}
                 </div>
               </Frame>
@@ -275,14 +273,13 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     display: inline-flex; align-items: center; gap: 0.4em;
     padding: 0 18px 0 0; margin-right: 18px;
     font-family: var(--display); font-weight: 700; font-size: clamp(18px, 2vw, 26px);
-    text-transform: uppercase; color: var(--stone);
+    text-transform: uppercase; color: var(--stone); white-space: nowrap;
     transition: color 0.2s;
   }
   .m-tab .num { font-family: var(--mono); font-weight: 400; font-size: 13px; color: #a9a9b3; }
   .m-tab[aria-selected='true'] { color: var(--ink); }
   .m-tab[aria-selected='true']::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--blue); }
   .m-tab:hover { color: var(--ink); }
-  .m-count { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--stone); }
   .m-groups { display: none; gap: 8px; }
   .chip {
     display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 1px solid var(--line);

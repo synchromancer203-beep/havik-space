@@ -76,9 +76,11 @@ function place() {
 
 /** Entrance for what's inside a frame as it arrives: masked lines rise, marked items drift up. */
 function enter(f: HTMLElement, delay = 0.18) {
-  const lines = f.querySelectorAll('[data-enter="rise"] .line > span');
-  const items = f.querySelectorAll('[data-enter]:not([data-enter="rise"])');
-  if (lines.length) gsap.fromTo(lines, { yPercent: 105 }, { yPercent: 0, duration: 1.1, ease: 'expo.out', delay, stagger: 0.06 });
+  // A "rise-twin" block is a second copy of a "rise" block (layered text) and rises in step with it.
+  const rise = (lines: NodeListOf<Element>) => lines.length && gsap.fromTo(lines, { yPercent: 105 }, { yPercent: 0, duration: 1.1, ease: 'expo.out', delay, stagger: 0.06 });
+  rise(f.querySelectorAll('[data-enter="rise"] .line > span'));
+  rise(f.querySelectorAll('[data-enter="rise-twin"] .line > span'));
+  const items = f.querySelectorAll('[data-enter]:not([data-enter^="rise"])');
   if (items.length) gsap.fromTo(items, { y: 48, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'expo.out', delay: delay + 0.08, stagger: 0.07 });
 }
 

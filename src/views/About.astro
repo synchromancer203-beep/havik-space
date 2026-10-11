@@ -1,13 +1,13 @@
 ---
-// /about, as frames: portrait + name + lead → rest of the bio → work → education & certificates →
+// /about, as frames: portrait + name → work → education & certificates →
 // awards with photos → skills → footer.
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Ink from '../components/Ink.astro';
 import Frame from '../components/Frame.astro';
 import TimelineSection from '../components/TimelineSection.astro';
-import { bio, timeline, skills } from '../data/about';
-import { getLang, useT, href } from '../i18n/utils';
+import { timeline, skills } from '../data/about';
+import { getLang, useT } from '../i18n/utils';
 import portrait from '../assets/about/chan-dung.jpg';
 import working from '../assets/about/lam-viec.jpg';
 import childhood from '../assets/about/tuoi-tho.jpg';
@@ -16,7 +16,6 @@ const lang = getLang(Astro.url);
 const t = useT(lang);
 const vi = lang === 'vi';
 const sec = Object.fromEntries(timeline.map((s, i) => [s.id, { ...s, n: i + 1 }]));
-const [lead, ...rest] = bio[lang];
 ---
 <Base title={t('nav.about')}>
   <Frame class="intro" inner="container intro-in">
@@ -26,13 +25,7 @@ const [lead, ...rest] = bio[lang];
     <div class="intro-text">
       <h1 class="display" data-enter="rise"><span class="line"><span>Havik</span></span></h1>
       <p class="meta sub" data-enter>{vi ? 'Hà Nội · Âm nhạc · Đồ họa · Marketing' : 'Hanoi · Music · Visual · Marketing'}</p>
-      <p class="lead" data-enter>{lead}</p>
     </div>
-  </Frame>
-
-  <Frame class="bio" inner="container bio-in">
-    {rest.map((p) => <p data-enter>{p}</p>)}
-    <a href={href(lang, '/media')} class="btn btn--signal" data-enter>{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
   </Frame>
 
   <Frame class="tl" inner="container tl-in">
@@ -71,17 +64,12 @@ const [lead, ...rest] = bio[lang];
 </Base>
 
 <style>
-  /* Intro: portrait beside the name and the lead paragraph. */
+  /* Intro: portrait beside the name. */
   .intro :global(.intro-in) { justify-content: safe center; gap: 4vh; padding-bottom: 5vh; }
   .portrait { width: min(100%, 34svh); aspect-ratio: 1; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
   .portrait :global(.ink) { width: 100%; height: 100%; }
   .intro-text { display: grid; gap: 14px; align-content: center; }
   .intro-text h1 { font-size: clamp(88px, min(16vw, 26vh), 260px); font-weight: 800; text-transform: uppercase; line-height: 0.85; }
-  .lead { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.4vw, 34px); line-height: 1.2; max-width: 36ch; }
-
-  .bio :global(.bio-in) { justify-content: safe center; align-items: flex-start; gap: 24px; padding-bottom: 5vh; }
-  .bio p { max-width: 62ch; font-size: clamp(15px, 1.25vw, 18px); }
-  .bio p:first-child { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.2vw, 32px); line-height: 1.25; max-width: 40ch; }
 
   /* Timeline frames */
   .tl :global(.tl-in) { justify-content: safe center; gap: 5vh; padding-bottom: 5vh; }

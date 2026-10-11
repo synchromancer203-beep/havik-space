@@ -12,12 +12,11 @@ const year = new Date().getFullYear();
   <div class="container footer-box">
     <div class="top">
       <div class="brand">
-        <a href={`mailto:${site.email}`} class="mail">{site.email}<span aria-hidden="true">&nbsp;↗</span></a>
+        <a href={`mailto:${site.email}`} class="mail">{site.email}<svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" /></svg></a>
         <SocialIcons />
       </div>
 
       <nav aria-label={t('footer.nav')}>
-        <p class="meta">{t('footer.nav')}</p>
         <ul>
           {nav.filter((n) => n.path !== '#contact').map((n) => <li><a href={href(lang, n.path)}>{t(n.key)}</a></li>)}
         </ul>
@@ -52,7 +51,9 @@ const year = new Date().getFullYear();
     padding-bottom: 6px;
   }
   .mail:hover { color: var(--blue); }
-  nav ul { display: grid; gap: 6px; margin-top: 12px; }
+  /* Drawn, not the ↗ character: the display font lacks it and iOS swaps in the emoji. */
+  .mail .arrow { display: inline-block; width: 0.62em; height: 0.62em; margin-left: 0.22em; vertical-align: 0.04em; }
+  nav ul { display: grid; gap: 6px; }
   nav a { text-transform: uppercase; font-size: 13px; letter-spacing: 0.08em; }
   nav a:hover { color: var(--blue); }
 
