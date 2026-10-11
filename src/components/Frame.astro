@@ -1,0 +1,22 @@
+---
+// One screen of the paged layout (scripts/frames.ts). Content goes in the slot; it is laid out
+// to fit 100svh, and scrolls inside the frame only if a small screen can't hold it.
+interface Props {
+  as?: 'section' | 'footer' | 'article';
+  id?: string;
+  class?: string;
+  /** Classes for the inner (scrolling) box. */
+  inner?: string;
+  /** Let the content run under the fixed header (full-bleed heroes). */
+  flush?: boolean;
+  /** Header turns light over this frame (dark/blue backgrounds). */
+  theme?: 'dark';
+  [key: `data-${string}`]: string | undefined;
+}
+const { as: Tag = 'section', id, class: cls, inner, flush = false, theme, ...rest } = Astro.props;
+---
+<Tag class:list={['frame', cls, { 'frame--flush': flush }]} id={id} data-theme={theme} {...rest}>
+  <div class:list={['frame-in', inner]}>
+    <slot />
+  </div>
+</Tag>

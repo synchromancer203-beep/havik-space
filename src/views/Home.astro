@@ -1,10 +1,11 @@
 ---
-// Home. Motion: scroll-driven only (ref marcuslorenzet).
+// Home, as frames (scripts/frames.ts): hero → the three fields → one frame per featured work → footer.
 // Riso one-ink print only on the hero; everything else keeps its real colours.
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Ink from '../components/Ink.astro';
+import Frame from '../components/Frame.astro';
 import chanDung from '../assets/personal/chan-dung.webp';
 import liveNov from '../assets/personal/live-novation.jpg';
 import musicHero from '../assets/personal/music-hero.jpg';
@@ -27,19 +28,18 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Collage behind the three fields: 9 photos, each shown once, hand-placed with breathing
-// room. One layer drifts up at roughly scroll speed while the stage is pinned.
-// [left %, top vw, width vw] — all in width units so gaps hold at any screen ratio.
+// Collage behind the three fields: 9 photos, hand-placed with breathing room so they fit one
+// screen. [left %, top %, width vw] for desktop (d) and mobile (m).
 const tiles = [
-  { src: chanDung,  d: [4, 2, 17],   m: [4, 0, 38] },
-  { src: musicHero, d: [30, 6, 20],  m: [54, 10, 42] },
-  { src: cm09,      d: [59, 0, 12],  m: [10, 48, 30] },
-  { src: open,      d: [80, 8, 16],  m: [52, 51, 44] },
-  { src: liveNov,   d: [10, 28, 21], m: [52, 90, 42] },
-  { src: cm05,      d: [42, 30, 13], m: [4, 98, 34] },
-  { src: nob,       d: [66, 27, 19], m: [46, 125, 46] },
-  { src: wc,        d: [22, 50, 12], m: [6, 142, 32] },
-  { src: musicLive, d: [52, 52, 22], m: [48, 165, 46] },
+  { src: chanDung,  d: [4, 12, 12],  m: [4, 10, 30] },
+  { src: musicHero, d: [24, 8, 15],  m: [52, 8, 36] },
+  { src: cm09,      d: [46, 4, 9],   m: [10, 32, 24] },
+  { src: open,      d: [63, 10, 12], m: [54, 34, 36] },
+  { src: liveNov,   d: [80, 26, 15], m: [56, 58, 34] },
+  { src: cm05,      d: [36, 46, 10], m: [6, 56, 28] },
+  { src: nob,       d: [58, 56, 15], m: [40, 78, 34] },
+  { src: wc,        d: [12, 58, 9],  m: [8, 80, 24] },
+  { src: musicLive, d: [80, 66, 15], m: [62, 2, 30] },
 ];
 
 // Featured work comes from the content collection (featured: true), in the order music → visual → marketing.
@@ -56,10 +56,10 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     tab: w.data.category,
   }));
 ---
-<Base flush>
-  <!-- HERO: dark portrait plate; the next section slides over it like a curtain -->
-  <section class="hero" data-theme="dark">
-    <div class="hero-photo">
+<Base>
+  <!-- HERO: dark portrait plate (its blue is the backdrop; frames.ts crossfades it out). -->
+  <Frame class="hero" inner="hero-in" flush theme="dark">
+    <div class="hero-photo" data-depth>
       <div class="hero-photo-in">
         <Ink src={hero} alt="Havik" widths={[480, 800, 1080]} sizes="(min-width: 768px) 57vh, 100vw" loading="eager" contrast={1.7} />
       </div>
@@ -70,137 +70,67 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     </h1>
 
     <a href={href(lang, '/media')} class="btn btn--signal hero-cta">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
-  </section>
+  </Frame>
 
-  <!-- FIELDS: three words over a drifting collage; the words invert wherever a photo passes beneath -->
-  <section class="fields">
-    <div class="f-stage">
-      <div class="collage" aria-hidden="true">
-        {tiles.map((tl) => (
-          <div
-            class="tile"
-            style={`--dx:${tl.d[0]}%;--dy:${tl.d[1]}vw;--dw:${tl.d[2]}vw;--mx:${tl.m[0]}%;--my:${tl.m[1]}vw;--mw:${tl.m[2]}vw;aspect-ratio:${tl.src.width}/${tl.src.height}`}
-          >
-            <Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 24vw, 48vw" />
-          </div>
-        ))}
-      </div>
-      <ul class="container f-list">
-        {fields.map((f, i) => (
-          <li>
-            <a href={href(lang, f.path)} class="f-word">
-              <span class="f-num">{i + 1}.</span>
-              <span class="display">{t(f.key)}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+  <!-- FIELDS: three words over a collage; the words invert wherever a photo sits beneath -->
+  <Frame class="fields" inner="f-stage">
+    <div class="collage" aria-hidden="true">
+      {tiles.map((tl, i) => (
+        <div
+          class="tile"
+          data-enter
+          data-depth
+          style={`--dx:${tl.d[0]}%;--dy:${tl.d[1]}%;--dw:${tl.d[2]}vw;--mx:${tl.m[0]}%;--my:${tl.m[1]}%;--mw:${tl.m[2]}vw;--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
+        >
+          <div class="tile-in"><Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
+        </div>
+      ))}
     </div>
-  </section>
+    <ul class="container f-list" data-enter="rise">
+      {fields.map((f, i) => (
+        <li>
+          <a href={href(lang, f.path)} class="f-word">
+            <span class="f-num">{i + 1}.</span>
+            <span class="display line"><span>{t(f.key)}</span></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </Frame>
 
-  <!-- SELECTED WORK -->
-  <section class="selected">
-    <div class="container">
-      <header class="sel-head">
-        <h2 class="display"><span class="line"><span>{vi ? 'Nổi bật.' : 'Selected.'}</span></span></h2>
-        <p class="meta">[ {t('nav.media')} ]</p>
-      </header>
-
-      <ol class="cases">
-        {featured.map((f, i) => (
-          <li class="case">
-            <a href={href(lang, `/media?tab=${f.tab}&work=${f.id}`)} class="case-link">
-              <div class="case-media" style={`--r:${f.img.width / f.img.height}`}>
-                <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" />
-              </div>
-              <div class="case-info">
-                <span class="case-num display">{String(i + 1).padStart(2, '0')}</span>
-                <h3 class="case-title display">{f.title}</h3>
-                <dl class="case-meta meta">
-                  <div><dt>Type</dt><dd>{f.kind}</dd></div>
-                  <div><dt>Role</dt><dd>{f.role}</dd></div>
-                  {f.year && <div><dt>Year</dt><dd>{f.year}</dd></div>}
-                </dl>
-                <span class="case-cta">{t('card.view')}</span>
-              </div>
-            </a>
-          </li>
-        ))}
-      </ol>
-
-      <a href={href(lang, '/media')} class="btn btn--signal all">{t('btn.viewAll')} <span aria-hidden="true">↗</span></a>
-    </div>
-  </section>
+  <!-- SELECTED WORK: one frame per featured piece -->
+  {featured.map((f, i) => (
+    <Frame class="case" inner="container case-in">
+      <a href={href(lang, `/media?tab=${f.tab}&work=${f.id}`)} class="case-link">
+        <div class="case-media" data-enter data-depth style={`--r:${f.img.width / f.img.height}`}>
+          <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" />
+        </div>
+        <div class="case-info">
+          <span class="case-num display" data-enter>{String(i + 1).padStart(2, '0')}</span>
+          <h2 class="case-title display" data-enter="rise"><span class="line"><span>{f.title}</span></span></h2>
+          <dl class="case-meta meta" data-enter>
+            <div><dt>Type</dt><dd>{f.kind}</dd></div>
+            <div><dt>Role</dt><dd>{f.role}</dd></div>
+            {f.year && <div><dt>Year</dt><dd>{f.year}</dd></div>}
+          </dl>
+          <span class="case-cta" data-enter>{t('card.view')}</span>
+        </div>
+      </a>
+      {i === featured.length - 1 && (
+        <a href={href(lang, '/media')} class="btn btn--signal all" data-enter>{t('btn.viewAll')} <span aria-hidden="true">↗</span></a>
+      )}
+    </Frame>
+  ))}
 </Base>
-
-<script>
-  import { gsap } from '../scripts/smooth';
-
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Load: portrait fades up, name rises out of its mask. These run as CSS animations (see the
-  // hero styles) so the name, the page's largest paint, doesn't wait for this script to load.
-
-  if (!reduce) {
-    // Hero recedes while the next section slides over it.
-    gsap.timeline({ scrollTrigger: { trigger: '.fields', start: 'top bottom', end: 'top top', scrub: true } })
-      .to('.hero-photo', { scale: 1.1, yPercent: 6, ease: 'none' }, 0)
-      .to('.hero-name', { yPercent: -35, ease: 'none' }, 0);
-
-    // The three fields light up one after another.
-    gsap.to('.f-word', {
-      opacity: 1,
-      stagger: 0.5,
-      ease: 'none',
-      scrollTrigger: { trigger: '.fields', start: 'top 20%', end: 'bottom bottom', scrub: true },
-    });
-
-    // While the stage is pinned, the collage layer rises from below to above the frame at
-    // about scroll speed, so each photo passes through exactly once.
-    gsap.fromTo('.collage', { y: () => innerHeight * 0.12 }, {
-      y: () => -(document.querySelector<HTMLElement>('.collage')!.offsetHeight - innerHeight * 0.2),
-      ease: 'none',
-      scrollTrigger: { trigger: '.fields', start: 'top top', end: 'bottom bottom', scrub: true, invalidateOnRefresh: true },
-    });
-
-    gsap.from('.sel-head .line > span', {
-      yPercent: 105, duration: 1.2, ease: 'expo.out',
-      scrollTrigger: { trigger: '.sel-head', start: 'top 80%' },
-    });
-
-    // Each case: image opens from a narrow slit, content inside drifts.
-    document.querySelectorAll<HTMLElement>('.case').forEach((c) => {
-      gsap.fromTo(c.querySelector('.case-media'), { clipPath: 'inset(18% 12% 18% 12%)' }, {
-        clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
-        scrollTrigger: { trigger: c, start: 'top 95%', end: 'top 35%', scrub: true },
-      });
-      gsap.fromTo(c.querySelector('.case-media'), { y: 40 }, {
-        y: -40, ease: 'none',
-        scrollTrigger: { trigger: c, start: 'top bottom', end: 'bottom top', scrub: true },
-      });
-      gsap.from(c.querySelectorAll('.case-info > *'), {
-        y: 40, opacity: 0, stagger: 0.08, ease: 'none',
-        scrollTrigger: { trigger: c, start: 'top 80%', end: 'top 40%', scrub: true },
-      });
-    });
-  } else {
-    gsap.set('.f-word', { opacity: 1 });
-  }
-</script>
 
 <style>
   /* ---------- Hero ---------- */
   .hero {
     --plate: #4334f4; /* Vivid Blue after the paper multiply in Ink, so the print melts into it */
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    min-height: 560px;
-    overflow: hidden;
-    z-index: 0;
-    background: radial-gradient(70% 90% at 70% 40%, #4b3dff 0%, var(--plate) 70%);
+    --frame-bg: radial-gradient(70% 90% at 70% 40%, #4b3dff 0%, var(--plate) 70%);
     color: var(--paper);
   }
+  .hero :global(.hero-in) { position: relative; overflow: hidden; }
   .hero-photo {
     position: absolute; top: 0; bottom: 0; right: 8vw;
     aspect-ratio: 9 / 16;
@@ -214,7 +144,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
 
   .hero-name {
     position: absolute; left: var(--gutter); bottom: 6vh; z-index: 1;
-    font-size: clamp(110px, 22vw, 360px);
+    font-size: clamp(110px, min(22vw, 44vh), 360px);
     font-weight: 800;
     line-height: 0.8;
     letter-spacing: -0.01em;
@@ -233,76 +163,65 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
 
   /* ---------- Fields ---------- */
   .fields {
-    --fields-bg:
+    --frame-bg:
       radial-gradient(90% 60% at 85% 10%, rgba(71, 55, 255, 0.05), transparent 60%),
       linear-gradient(180deg, #f5f5f7 0%, #ececf0 100%);
-    position: relative; z-index: 1;
-    height: 220vh;
-    background: var(--fields-bg);
-    /* Lift the curtain off the hero. */
-    box-shadow: 0 -24px 48px rgba(7, 6, 26, 0.28);
   }
-  /* The stage carries its own background so the blended words have something to invert against. */
-  .f-stage {
-    position: sticky; top: 0; height: 100svh; overflow: hidden;
-    display: grid; align-items: start;
-    padding-top: calc(var(--header-h) + 6vh);
-    background: var(--fields-bg);
-    isolation: isolate;
+  /* The stage holds its own background so the blended words have something to invert against. */
+  /* In the paged layout it stays put and fades with the backdrop (--fy, --bgo: frames.ts), so it
+     never reads as a sliding sheet. */
+  /* overflow: visible so the frame (the viewport), not the moving stage, clips that background. */
+  .fields :global(.f-stage) { position: relative; justify-content: safe center; isolation: isolate; overflow: visible; }
+  .fields :global(.f-stage)::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    background: var(--frame-bg); opacity: var(--bgo, 1);
+    translate: 0 calc(var(--fy, 0) * -1svh);
   }
-
-  .collage {
-    position: absolute; left: 0; right: 0; top: 0;
-    height: 66vw;
-    will-change: transform;
-  }
+  .collage { position: absolute; inset: var(--header-h) 0 0; }
   .tile {
     position: absolute;
     left: var(--dx); top: var(--dy); width: var(--dw);
-    overflow: hidden;
     box-shadow: 0 18px 40px -18px rgba(32, 32, 48, 0.35);
   }
-  .tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* A slow drift keeps the collage alive while it is on screen. */
+  .tile-in { height: 100%; overflow: hidden; animation: drift 9s ease-in-out calc(var(--i) * -1.3s) infinite alternate; }
+  .tile-in :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  @keyframes drift { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
 
   /* White + difference: dark on the paper, inverted wherever a photo sits underneath. */
   .f-list {
     position: relative; z-index: 2;
-    display: grid; gap: 2vh;
+    display: grid; gap: 1vh;
     color: #fff;
     mix-blend-mode: difference;
   }
-  .f-word { display: inline-flex; align-items: flex-start; gap: 16px; opacity: 0.18; }
+  .f-word { display: inline-flex; align-items: flex-start; gap: 16px; }
   .f-word .display {
-    font-size: clamp(64px, 11vw, 180px);
+    font-size: clamp(64px, min(11vw, 20vh), 180px);
     font-weight: 800;
     line-height: 1.12; /* room for stacked Vietnamese diacritics (Ồ, Ạ) */
     text-transform: uppercase;
   }
   .f-num { font-family: var(--mono); font-size: clamp(14px, 1.4vw, 20px); padding-top: 1.2em; }
 
-  /* ---------- Selected ---------- */
-  .selected {
-    position: relative; z-index: 1;
-    padding-block: 12vh 16vh;
-    background:
+  /* ---------- Selected: one frame per work ---------- */
+  .case {
+    --frame-bg:
       radial-gradient(60% 40% at 0% 100%, rgba(247, 92, 3, 0.04), transparent 70%),
-      linear-gradient(180deg, #ececf0 0%, #f4f4f6 30%, #eeeef2 100%);
+      linear-gradient(180deg, #ececf0 0%, #f4f4f6 40%, #eeeef2 100%);
   }
-  .sel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 10vh; }
-  .sel-head h2 { font-size: clamp(72px, 12vw, 200px); font-weight: 800; }
-
-  .cases { display: grid; gap: 14vh; list-style: none; padding: 0; }
-  .case-link { display: grid; gap: 24px; }
+  .case :global(.case-in) { justify-content: safe center; gap: 4vh; padding-bottom: 5vh; }
+  .case-link { display: grid; gap: 20px; align-items: center; }
   .case-media {
-    /* Keep the artwork's own proportions; cap tall pieces at 85vh. */
+    /* Keep the artwork's own proportions, sized to fit the frame. */
     aspect-ratio: var(--r);
-    width: min(100%, calc(85vh * var(--r)));
+    width: min(100%, calc(44svh * var(--r)));
     box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45);
   }
-  .case-media img { display: block; width: 100%; height: 100%; }
-  .case-info { display: grid; align-content: start; gap: 16px; }
-  .case-num { font-size: clamp(56px, 7vw, 112px); font-weight: 800; color: var(--blue); line-height: 0.8; }
-  .case-title { font-size: clamp(36px, 4vw, 64px); font-weight: 700; line-height: 0.95; }
+  .case-media :global(img) { display: block; width: 100%; height: 100%; }
+  .case-info { display: grid; align-content: start; gap: 14px; }
+  .case-num { font-size: clamp(48px, 7vw, 112px); font-weight: 800; color: var(--blue); line-height: 0.8; }
+  .case-title { font-size: clamp(34px, 4vw, 64px); font-weight: 700; line-height: 0.95; }
   .case-meta { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 14px; }
   .case-meta div { display: grid; grid-template-columns: 64px 1fr; }
   .case-meta dt { color: var(--stone); }
@@ -313,11 +232,11 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     color: var(--orange); border-bottom: 1px solid var(--orange);
   }
   .case-link:hover .case-title { color: var(--blue); }
-
-  .all { margin-top: 12vh; }
+  .all { align-self: flex-start; }
 
   @media (min-width: 1024px) {
-    .case-link { grid-template-columns: 7fr 4fr; gap: 5vw; align-items: start; }
+    .case-link { grid-template-columns: 7fr 4fr; gap: 5vw; }
+    .case-media { width: min(100%, calc(68svh * var(--r))); }
     .case:nth-child(even) .case-link { grid-template-columns: 4fr 7fr; }
     .case:nth-child(even) .case-media { order: 2; justify-self: end; }
   }
@@ -327,9 +246,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
       -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 45%);
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
-    .hero-cta { left: var(--gutter); right: auto; }
-    .collage { height: 194vw; }
+    .hero-cta { left: var(--gutter); right: auto; bottom: calc(6vh + 22vw + 16px); }
     .tile { left: var(--mx); top: var(--my); width: var(--mw); }
-    .hero-cta { bottom: calc(6vh + 22vw + 16px); }
   }
 </style>

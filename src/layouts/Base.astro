@@ -11,8 +11,6 @@ import displayFont from '@fontsource-variable/big-shoulders-display/files/big-sh
 interface Props {
   title?: string;
   description?: string;
-  /** Let the first section run under the fixed header (used by full-bleed heroes). */
-  flush?: boolean;
   /** Keep the page out of search results (404). */
   noindex?: boolean;
 }
@@ -21,7 +19,7 @@ const lang = getLang(Astro.url);
 const t = useT(lang);
 const path = neutralPath(Astro.url.pathname).replace(/(.)\/$/, '$1');
 const page = seo[path];
-const { title, description = page?.description[lang] ?? t('meta.description'), flush = false, noindex = false } = Astro.props;
+const { title, description = page?.description[lang] ?? t('meta.description'), noindex = false } = Astro.props;
 const fullTitle = title ? `${title} | Havik` : 'Havik';
 const origin = Astro.site!.origin;
 const canonical = new URL(Astro.url.pathname, origin).href;
@@ -81,6 +79,15 @@ const person = path === '/' && {
         sessionStorage.removeItem('pt');
         if (Date.now() - pt < 5000 && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('pt-in');
       } catch (e) {}
+      // Paged layout (scripts/frames.ts) unless motion is reduced. If the script never takes
+      // over, fall back to a normally scrolling page.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('paged');
+        setTimeout(function () {
+          var r = document.documentElement;
+          if (!r.classList.contains('frames-on')) r.classList.remove('paged');
+        }, 4000);
+      }
       addEventListener('pagereveal', function (e) {
         window.__ptReveal = e.viewTransition ? 'vt' : 'plain';
         if (e.viewTransition) document.documentElement.classList.remove('pt-in');
@@ -93,10 +100,11 @@ const person = path === '/' && {
     <div class="pt" aria-hidden="true"><canvas></canvas></div>
     <a href="#main" class="skip">{t('skip')}</a>
     <Header />
-    <main id="main" class:list={{ flush }}>
+    <main id="main">
       <slot />
     </main>
     <Footer />
     <script>import '../scripts/smooth';</script>
+    <script>import '../scripts/frames';</script>
   </body>
 </html>
