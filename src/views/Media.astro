@@ -1,8 +1,8 @@
 ---
 // /media, as frames. A fixed bar holds the three tabs (music · visual · marketing); each tab runs
 // as its own sequence: an index frame, then for every work a cover frame (image + details)
-// followed by one gallery frame holding all its images as a grid of thumbnails; a thumbnail
-// opens the image full screen (.lb). Tabs are client-side, so /media?tab=visual&work=warcross
+// followed by one gallery frame holding all its images as an endless sideways carousel
+// (scripts/carousel.ts); a thumbnail opens the image full screen (.lb). Tabs are client-side, so /media?tab=visual&work=warcross
 // links work on a static host.
 import { Image, getImage } from 'astro:assets';
 import { getCollection } from 'astro:content';
@@ -38,6 +38,7 @@ const L = {
   results: vi ? 'Kết quả' : 'Results',
   next: vi ? 'Tác phẩm tiếp theo' : 'Next work',
   gallery: vi ? 'Thư viện ảnh' : 'Gallery',
+  drag: vi ? 'Kéo ngang để xem hết ↔' : 'Drag sideways to see all ↔',
   open: vi ? 'Xem ảnh lớn' : 'View image',
   prev: vi ? 'Ảnh trước' : 'Previous image',
   nextImg: vi ? 'Ảnh sau' : 'Next image',
@@ -50,8 +51,6 @@ const full = new Map<ImageMetadata, string>();
 await Promise.all(all.flatMap((w) => w.data.gallery.map(async (g) => {
   full.set(g, (await getImage({ src: g, width: Math.min(g.width, 2000) })).src);
 })));
-/** Columns before the script fits the grid to the frame (roughly 4:3 cells on a wide screen). */
-const cols = (n: number) => Math.min(n, Math.ceil(Math.sqrt(n * 1.6)));
 
 const byTab = Object.fromEntries(tabs.map((tb) => [tb.id, all.filter((w) => w.data.category === tb.id)]));
 const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.group))];
@@ -100,7 +99,6 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
       {byTab[tb.id].map((w, wi) => {
         const nextWork = byTab[tb.id][wi + 1];
         const gallery = w.data.gallery;
-        const c = cols(gallery.length);
         const nextLink = nextWork && (
           <a class="m-next" href={`#work-${nextWork.id}`}>{L.next}: {nextWork.data.title} ↓</a>
         );
@@ -145,15 +143,16 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
 
             {gallery.length > 0 && (
               <Frame class="m-frame m-gallery" inner="container m-in m-gallery-in" data-tab={tb.id}>
-                <div class="g-grid" data-enter data-depth data-title={w.data.title} data-n={gallery.length} style={`--c:${c};--r:${Math.ceil(gallery.length / c)}`}>
+                <div class="g-track" data-enter data-depth data-title={w.data.title}>
                   {gallery.map((g, gi) => (
-                    <button type="button" class="g-thumb" data-full={full.get(g)} data-w={g.width} data-h={g.height} aria-label={`${L.open}: ${w.data.title} ${gi + 1}`}>
-                      <Image src={g} alt={`${w.data.title} ${gi + 1}`} widths={[320, 640]} sizes={`(min-width: 1024px) ${Math.ceil(100 / c)}vw, ${gallery.length > 1 ? 50 : 100}vw`} />
+                    <button type="button" class="g-thumb" data-i={gi} data-a={(g.width / g.height).toFixed(4)} data-full={full.get(g)} data-w={g.width} data-h={g.height} style={`aspect-ratio:${g.width}/${g.height}`} aria-label={`${L.open}: ${w.data.title} ${gi + 1}`}>
+                      <Image src={g} alt={`${w.data.title} ${gi + 1}`} widths={[480, 960]} sizes="(min-width: 1024px) 40vw, 60vw" draggable="false" />
                     </button>
                   ))}
                 </div>
                 <div class="g-foot meta">
                   <span>{w.data.title} · {gallery.length}</span>
+                  <span class="g-hint" hidden>{L.drag}</span>
                   {nextLink}
                 </div>
               </Frame>
@@ -178,6 +177,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
 
 <script>
   import { refresh, frameOf, goTo } from '../scripts/frames';
+  import { layout } from '../scripts/carousel';
 
   const root = document.documentElement;
   const paged = root.classList.contains('paged');
@@ -198,33 +198,8 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     document.querySelectorAll<HTMLElement>('.m-frame').forEach((f) => (f.hidden = f.dataset.tab !== tab));
     if (paged) refresh(n);
     else scrollTo(0, 0);
-    fit();
+    layout();
   }
-
-  // Thumbnail grids: pick the column count whose cells come closest to 4:3 in the space the
-  // frame actually has, with few empty cells left over.
-  function fit() {
-    document.querySelectorAll<HTMLElement>('.g-grid').forEach((g) => {
-      const n = Number(g.dataset.n);
-      const W = g.clientWidth;
-      const H = g.clientHeight;
-      if (!W || !H) return;
-      const gap = parseFloat(getComputedStyle(g).columnGap) || 0;
-      let best = 1;
-      let score = Infinity;
-      for (let c = 1; c <= n; c++) {
-        const r = Math.ceil(n / c);
-        const cw = (W - gap * (c - 1)) / c;
-        const ch = (H - gap * (r - 1)) / r;
-        if (cw <= 0 || ch <= 0) continue;
-        const s = Math.abs(Math.log(cw / ch / 1.33)) + (0.6 * (c * r - n)) / n;
-        if (s < score) { score = s; best = c; }
-      }
-      g.style.setProperty('--c', String(best));
-      g.style.setProperty('--r', String(Math.ceil(n / best)));
-    });
-  }
-  addEventListener('resize', fit);
 
   // Viewer
   const lb = document.querySelector<HTMLDialogElement>('.lb')!;
@@ -244,14 +219,16 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     const im = new Image();
     im.src = src;
     im.decode().then(() => { if (set[at] === b) lbImg.src = src; }, () => {});
-    lbCap.textContent = b.closest<HTMLElement>('.g-grid')!.dataset.title!;
+    lbCap.textContent = b.closest<HTMLElement>('.g-track')!.dataset.title!;
   }
   document.addEventListener('click', (e) => {
     const b = (e.target as Element).closest?.<HTMLButtonElement>('.g-thumb');
     if (!b) return;
-    set = [...b.closest('.g-grid')!.querySelectorAll<HTMLButtonElement>('.g-thumb')];
+    // The carousel repeats thumbnails; the viewer steps through the originals in order.
+    set = [...b.closest('.g-track')!.querySelectorAll<HTMLButtonElement>('.g-thumb:not(.is-clone)')]
+      .sort((p, q) => Number(p.dataset.i) - Number(q.dataset.i));
     lb.classList.toggle('single', set.length < 2);
-    view(set.indexOf(b));
+    view(Number(b.dataset.i));
     lb.showModal();
   });
   lb.querySelector('.lb-prev')!.addEventListener('click', () => view(at - 1));
@@ -352,19 +329,25 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
   .m-links { display: flex; flex-wrap: wrap; gap: 10px; }
   .m-next { justify-self: start; color: var(--orange); border-bottom: 1px solid var(--orange); letter-spacing: 0.06em; }
 
-  /* Gallery: every image of the work as one grid of same-shape thumbnails, sized to the frame
-     (fit() picks --c/--r). A thumbnail opens the viewer. */
+  /* Gallery: 1–3 rows of images at their own proportions, running sideways without end
+     (scripts/carousel.ts). Without the script it is one row that scrolls. */
   .m-gallery :global(.m-gallery-in) { justify-content: flex-start; }
-  .g-grid {
+  .g-track {
     flex: 1; min-height: 0;
-    display: grid; gap: 10px;
-    grid-template-columns: repeat(var(--c), minmax(0, 1fr));
-    grid-template-rows: repeat(var(--r), minmax(0, 1fr));
+    display: flex; gap: 12px;
+    overflow-x: auto; scrollbar-width: none;
+    user-select: none; -webkit-user-select: none;
   }
-  .g-thumb { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #e2e2e8; cursor: zoom-in; }
-  .g-thumb :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease-out), opacity 0.3s; }
-  .g-thumb:hover :global(img) { transform: scale(1.04); }
-  .g-grid:hover .g-thumb:not(:hover) :global(img) { opacity: 0.75; }
+  .g-track:has(:global(.g-row)) { flex-direction: column; overflow: clip; }
+  .g-track:global(.is-loop) { cursor: grab; touch-action: none; }
+  .g-track:global(.is-dragging) { cursor: grabbing; }
+  .g-track:global(.is-dragging) .g-thumb { pointer-events: none; }
+  .g-track :global(.g-row) { flex: 1 1 0; min-height: 0; display: flex; gap: 12px; justify-content: center; will-change: transform; }
+  .g-track:global(.is-loop) :global(.g-row) { justify-content: flex-start; }
+  .g-thumb { position: relative; flex: none; height: 100%; overflow: hidden; background: #e2e2e8; cursor: zoom-in; }
+  .g-track:global(.is-loop) .g-thumb { cursor: inherit; }
+  .g-thumb :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; transition: transform 0.6s var(--ease-out); }
+  .g-thumb:hover :global(img) { transform: scale(1.03); }
   .g-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
 
   /* Viewer: the whole screen, image contained (never cropped). */
@@ -401,7 +384,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     .m-list .meta { font-size: 10px; }
     .m-cover-media :global(img) { width: min(100%, calc(28svh * var(--r))); }
     .m-desc { font-size: 14px; }
-    .g-grid { gap: 6px; }
+    .g-track, .g-track :global(.g-row) { gap: 8px; }
     .lb-fig { padding: 64px 12px 120px; }
     .lb-prev, .lb-next { top: auto; bottom: 16px; translate: none; }
     .lb-prev { left: auto; right: calc(var(--gutter) + 56px); }
