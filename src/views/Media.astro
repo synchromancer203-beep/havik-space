@@ -1,9 +1,10 @@
 ---
 // /media, as frames. A fixed bar holds the three tabs (music · visual · marketing); each tab runs
 // as its own sequence: an index frame, then for every work a cover frame (image + details)
-// followed by its gallery, one to three images per frame. Tabs are client-side, so
-// /media?tab=visual&work=warcross links work on a static host.
-import { Image } from 'astro:assets';
+// followed by one gallery frame holding all its images as a grid of thumbnails; a thumbnail
+// opens the image full screen (.lb). Tabs are client-side, so /media?tab=visual&work=warcross
+// links work on a static host.
+import { Image, getImage } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import type { ImageMetadata } from 'astro';
 import Base from '../layouts/Base.astro';
@@ -36,25 +37,21 @@ const L = {
   type: vi ? 'Loại' : 'Type',
   results: vi ? 'Kết quả' : 'Results',
   next: vi ? 'Tác phẩm tiếp theo' : 'Next work',
-  gallery: vi ? 'Xem ảnh' : 'Gallery',
+  gallery: vi ? 'Thư viện ảnh' : 'Gallery',
+  open: vi ? 'Xem ảnh lớn' : 'View image',
+  prev: vi ? 'Ảnh trước' : 'Previous image',
+  nextImg: vi ? 'Ảnh sau' : 'Next image',
+  close: vi ? 'Đóng' : 'Close',
 };
 const linkLabel = (cat: string) => (cat === 'music' ? t('btn.listen') : t('btn.visit'));
 
-// Gallery → frames: fill a row while the images' aspect ratios add up to what a wide screen
-// holds at full height (≈2.6), at most three per frame. Every image keeps its proportions.
-function rows(gallery: ImageMetadata[]) {
-  const out: ImageMetadata[][] = [];
-  let row: ImageMetadata[] = [];
-  let sum = 0;
-  for (const g of gallery) {
-    const a = g.width / g.height;
-    if (row.length && (row.length === 3 || sum + a > 2.6)) { out.push(row); row = []; sum = 0; }
-    row.push(g);
-    sum += a;
-  }
-  if (row.length) out.push(row);
-  return out;
-}
+// Full-size versions for the viewer, only fetched when a thumbnail is opened.
+const full = new Map<ImageMetadata, string>();
+await Promise.all(all.flatMap((w) => w.data.gallery.map(async (g) => {
+  full.set(g, (await getImage({ src: g, width: Math.min(g.width, 2000) })).src);
+})));
+/** Columns before the script fits the grid to the frame (roughly 4:3 cells on a wide screen). */
+const cols = (n: number) => Math.min(n, Math.ceil(Math.sqrt(n * 1.6)));
 
 const byTab = Object.fromEntries(tabs.map((tb) => [tb.id, all.filter((w) => w.data.category === tb.id)]));
 const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.group))];
@@ -102,7 +99,8 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
 
       {byTab[tb.id].map((w, wi) => {
         const nextWork = byTab[tb.id][wi + 1];
-        const gallery = rows(w.data.gallery);
+        const gallery = w.data.gallery;
+        const c = cols(gallery.length);
         const nextLink = nextWork && (
           <a class="m-next" href={`#work-${nextWork.id}`}>{L.next}: {nextWork.data.title} ↓</a>
         );
@@ -145,26 +143,37 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
               </div>
             </Frame>
 
-            {gallery.map((row, ri) => (
+            {gallery.length > 0 && (
               <Frame class="m-frame m-gallery" inner="container m-in m-gallery-in" data-tab={tb.id}>
-                <div class="g-row">
-                  {row.map((g, gi) => (
-                    <figure class="g-item" data-enter data-depth style={`--a:${(g.width / g.height).toFixed(3)};--ia:${(g.height / g.width).toFixed(3)}`}>
-                      <Image src={g} alt={`${w.data.title} ${ri * 3 + gi + 1}`} widths={[640, 1080, 1600]} sizes={row.length === 1 ? '(min-width: 1024px) 80vw, 100vw' : '(min-width: 1024px) 45vw, 100vw'} />
-                    </figure>
+                <div class="g-grid" data-enter data-depth data-title={w.data.title} data-n={gallery.length} style={`--c:${c};--r:${Math.ceil(gallery.length / c)}`}>
+                  {gallery.map((g, gi) => (
+                    <button type="button" class="g-thumb" data-full={full.get(g)} data-w={g.width} data-h={g.height} aria-label={`${L.open}: ${w.data.title} ${gi + 1}`}>
+                      <Image src={g} alt={`${w.data.title} ${gi + 1}`} widths={[320, 640]} sizes={`(min-width: 1024px) ${Math.ceil(100 / c)}vw, ${gallery.length > 1 ? 50 : 100}vw`} />
+                    </button>
                   ))}
                 </div>
                 <div class="g-foot meta">
-                  <span>{w.data.title}</span>
-                  {ri === gallery.length - 1 && nextLink}
+                  <span>{w.data.title} · {gallery.length}</span>
+                  {nextLink}
                 </div>
               </Frame>
-            ))}
+            )}
           </>
         );
       })}
     </>
   ))}
+
+  <!-- Image viewer: one image, full screen, with its project's others a key or click away -->
+  <dialog class="lb" aria-label={L.gallery}>
+    <figure class="lb-fig">
+      <img class="lb-img" alt="" />
+      <figcaption class="lb-cap meta"></figcaption>
+    </figure>
+    <button type="button" class="lb-btn lb-prev" aria-label={L.prev}>←</button>
+    <button type="button" class="lb-btn lb-next" aria-label={L.nextImg}>→</button>
+    <button type="button" class="lb-btn lb-close" aria-label={L.close} autofocus>✕</button>
+  </dialog>
 </Base>
 
 <script>
@@ -189,7 +198,69 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     document.querySelectorAll<HTMLElement>('.m-frame').forEach((f) => (f.hidden = f.dataset.tab !== tab));
     if (paged) refresh(n);
     else scrollTo(0, 0);
+    fit();
   }
+
+  // Thumbnail grids: pick the column count whose cells come closest to 4:3 in the space the
+  // frame actually has, with few empty cells left over.
+  function fit() {
+    document.querySelectorAll<HTMLElement>('.g-grid').forEach((g) => {
+      const n = Number(g.dataset.n);
+      const W = g.clientWidth;
+      const H = g.clientHeight;
+      if (!W || !H) return;
+      const gap = parseFloat(getComputedStyle(g).columnGap) || 0;
+      let best = 1;
+      let score = Infinity;
+      for (let c = 1; c <= n; c++) {
+        const r = Math.ceil(n / c);
+        const cw = (W - gap * (c - 1)) / c;
+        const ch = (H - gap * (r - 1)) / r;
+        if (cw <= 0 || ch <= 0) continue;
+        const s = Math.abs(Math.log(cw / ch / 1.33)) + (0.6 * (c * r - n)) / n;
+        if (s < score) { score = s; best = c; }
+      }
+      g.style.setProperty('--c', String(best));
+      g.style.setProperty('--r', String(Math.ceil(n / best)));
+    });
+  }
+  addEventListener('resize', fit);
+
+  // Viewer
+  const lb = document.querySelector<HTMLDialogElement>('.lb')!;
+  const lbImg = lb.querySelector<HTMLImageElement>('.lb-img')!;
+  const lbCap = lb.querySelector<HTMLElement>('.lb-cap')!;
+  let set: HTMLButtonElement[] = [];
+  let at = 0;
+  function view(i: number) {
+    at = (i + set.length) % set.length;
+    const b = set[at];
+    const thumb = b.querySelector('img')!;
+    const src = b.dataset.full!;
+    lbImg.width = Number(b.dataset.w);
+    lbImg.height = Number(b.dataset.h);
+    lbImg.alt = thumb.alt;
+    lbImg.src = thumb.currentSrc || thumb.src; // the thumbnail at once, then the full image when ready
+    const im = new Image();
+    im.src = src;
+    im.decode().then(() => { if (set[at] === b) lbImg.src = src; }, () => {});
+    lbCap.textContent = b.closest<HTMLElement>('.g-grid')!.dataset.title!;
+  }
+  document.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest?.<HTMLButtonElement>('.g-thumb');
+    if (!b) return;
+    set = [...b.closest('.g-grid')!.querySelectorAll<HTMLButtonElement>('.g-thumb')];
+    lb.classList.toggle('single', set.length < 2);
+    view(set.indexOf(b));
+    lb.showModal();
+  });
+  lb.querySelector('.lb-prev')!.addEventListener('click', () => view(at - 1));
+  lb.querySelector('.lb-next')!.addEventListener('click', () => view(at + 1));
+  lb.querySelector('.lb-close')!.addEventListener('click', () => lb.close());
+  lb.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); view(at - 1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); view(at + 1); }
+  });
 
   tabs.forEach((b) => b.addEventListener('click', () => {
     if (b.dataset.tab === tab) return paged ? goTo(0) : scrollTo(0, 0);
@@ -281,12 +352,47 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
   .m-links { display: flex; flex-wrap: wrap; gap: 10px; }
   .m-next { justify-self: start; color: var(--orange); border-bottom: 1px solid var(--orange); letter-spacing: 0.06em; }
 
-  /* Gallery: images share the row by aspect ratio and are contained, never cropped. */
+  /* Gallery: every image of the work as one grid of same-shape thumbnails, sized to the frame
+     (fit() picks --c/--r). A thumbnail opens the viewer. */
   .m-gallery :global(.m-gallery-in) { justify-content: flex-start; }
-  .g-row { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
-  .g-item { margin: 0; flex: var(--ia) 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
-  .g-item :global(img) { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; box-shadow: 0 24px 48px -28px rgba(32, 32, 48, 0.45); }
+  .g-grid {
+    flex: 1; min-height: 0;
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(var(--c), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--r), minmax(0, 1fr));
+  }
+  .g-thumb { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #e2e2e8; cursor: zoom-in; }
+  .g-thumb :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease-out), opacity 0.3s; }
+  .g-thumb:hover :global(img) { transform: scale(1.04); }
+  .g-grid:hover .g-thumb:not(:hover) :global(img) { opacity: 0.75; }
   .g-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
+
+  /* Viewer: the whole screen, image contained (never cropped). */
+  .lb {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%; max-width: none; max-height: none;
+    margin: 0; padding: 0; border: 0;
+    background: var(--paper-2); color: var(--ink);
+    overflow: hidden;
+  }
+  .lb[open] { animation: lb-in 0.3s var(--ease-out); }
+  @keyframes lb-in { from { opacity: 0; } }
+  .lb::backdrop { background: transparent; }
+  .lb-fig { position: absolute; inset: 0; margin: 0; padding: 56px max(72px, 6vw) 72px; display: flex; align-items: center; justify-content: center; }
+  .lb-img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  .lb-cap { position: absolute; left: var(--gutter); bottom: 24px; }
+  .lb-btn {
+    position: absolute;
+    width: 48px; height: 48px; display: grid; place-items: center;
+    border: 1px solid var(--ink); background: var(--paper-2);
+    font-size: 18px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .lb-btn:hover { background: var(--ink); color: var(--paper); }
+  .lb-prev { left: var(--gutter); top: 50%; translate: 0 -50%; }
+  .lb-next { right: var(--gutter); top: 50%; translate: 0 -50%; }
+  .lb-close { right: var(--gutter); top: 16px; }
+  .lb.single .lb-prev, .lb.single .lb-next { display: none; }
 
   @media (max-width: 767px) {
     .m-title { font-size: clamp(48px, 14vw, 72px); }
@@ -295,6 +401,11 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     .m-list .meta { font-size: 10px; }
     .m-cover-media :global(img) { width: min(100%, calc(28svh * var(--r))); }
     .m-desc { font-size: 14px; }
+    .g-grid { gap: 6px; }
+    .lb-fig { padding: 64px 12px 120px; }
+    .lb-prev, .lb-next { top: auto; bottom: 16px; translate: none; }
+    .lb-prev { left: auto; right: calc(var(--gutter) + 56px); }
+    .lb-cap { bottom: 30px; max-width: calc(100% - 160px); }
   }
   @media (min-width: 1024px) {
     .m-groups:not([hidden]) { display: flex; }
@@ -304,7 +415,5 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     .m-cover-media { align-self: center; flex: none; max-width: 56%; }
     .m-cover-media :global(img) { width: auto; max-width: 100%; max-height: 66svh; }
     .m-info { flex: 1; }
-    .g-row { flex-direction: row; gap: 20px; }
-    .g-item { flex: var(--a) 1 0; min-width: 0; }
   }
 </style>
