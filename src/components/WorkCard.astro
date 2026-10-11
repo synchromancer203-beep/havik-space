@@ -1,0 +1,48 @@
+---
+// A work tile that deep-links into the /media lightbox. Keeps the cover's own proportions and colours.
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { getLang, useT, href } from '../i18n/utils';
+
+interface Props { work: CollectionEntry<'works'>; sizes?: string; }
+const { work, sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw' } = Astro.props;
+const lang = getLang(Astro.url);
+const t = useT(lang);
+const d = work.data;
+---
+<a href={href(lang, `/media?tab=${d.category}&work=${work.id}`)} class="wc">
+  <div class="wc-media">
+    {d.cover ? (
+      <Image src={d.cover} alt={d.title} widths={[480, 800, 1200]} sizes={sizes} />
+    ) : (
+      <div class="wc-type"><span class="display">{d.title}</span></div>
+    )}
+    <span class="wc-view">{t('card.view')}</span>
+  </div>
+  <div class="wc-info">
+    <h3 class="display">{d.title}</h3>
+    <p class="meta">{d.kind[lang]}{d.year[lang] && ` · ${d.year[lang]}`}</p>
+  </div>
+</a>
+
+<style>
+  .wc { display: block; }
+  .wc-media { position: relative; overflow: hidden; box-shadow: 0 24px 48px -28px rgba(32, 32, 48, 0.45); }
+  .wc-media :global(img) { display: block; width: 100%; height: auto; transition: transform 0.8s var(--ease-out); }
+  .wc:hover .wc-media :global(img) { transform: scale(1.03); }
+  .wc-view {
+    position: absolute; right: 12px; bottom: 12px;
+    padding: 6px 10px; background: var(--orange); color: var(--paper);
+    font-size: 12px; letter-spacing: 0.08em;
+    opacity: 0; transform: translateY(6px); transition: opacity 0.25s, transform 0.25s;
+  }
+  .wc:hover .wc-view, .wc:focus-visible .wc-view { opacity: 1; transform: none; }
+  .wc-type {
+    aspect-ratio: 4 / 3; display: grid; place-items: end start; padding: 20px;
+    background: linear-gradient(160deg, #4b3dff, var(--blue) 60%, #3529bf); color: #fff;
+  }
+  .wc-type .display { font-size: clamp(32px, 3.4vw, 52px); font-weight: 800; line-height: 0.95; }
+  .wc-info { padding-top: 14px; display: grid; gap: 4px; }
+  .wc-info h3 { font-size: clamp(24px, 2.2vw, 32px); font-weight: 700; line-height: 1; }
+  .wc:hover h3 { color: var(--blue); }
+</style>

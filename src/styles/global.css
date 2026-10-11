@@ -88,7 +88,8 @@ main.flush { padding-top: 0; }
   letter-spacing: -0.01em;
 }
 /* Line mask for reveal animations */
-.line { display: block; overflow: hidden; padding-bottom: 0.04em; }
+/* Extra room above so stacked Vietnamese marks (Ồ, Ổ, Ẫ) aren't clipped by the mask. */
+.line { display: block; overflow: hidden; padding-top: 0.22em; margin-top: -0.22em; padding-bottom: 0.06em; }
 .line > span { display: inline-block; will-change: transform; }
 
 /* Blue flood sections */

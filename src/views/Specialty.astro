@@ -1,0 +1,188 @@
+---
+// /specialties/{music|visual|marketing}. Head → image → services → skills → people → related work → next field.
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Ink from '../components/Ink.astro';
+import WorkCard from '../components/WorkCard.astro';
+import { specialties, type Specialty } from '../data/specialties';
+import { getLang, useT, href } from '../i18n/utils';
+import musicHero from '../assets/personal/music-hero.jpg';
+import wcCover from '../content/works/warcross/cover.webp';
+import nobCover from '../content/works/nob-network/cover.jpg';
+
+interface Props { id: Specialty['id']; }
+const { id } = Astro.props;
+const lang = getLang(Astro.url);
+const t = useT(lang);
+const vi = lang === 'vi';
+
+const idx = specialties.findIndex((s) => s.id === id);
+const sp = specialties[idx];
+const next = specialties[(idx + 1) % specialties.length];
+const title = t(`spec.${id}` as const);
+
+// Personal photo → riso print; work images stay true colour.
+const heroImg = { music: musicHero, visual: wcCover, marketing: nobCover }[id];
+const heroRiso = id === 'music';
+
+const works = (await getCollection('works'))
+  .sort((a, b) => a.data.order - b.data.order || b.data.sort - a.data.sort);
+const byCat = works.filter((w) => w.data.category === id);
+const forGroup = (g: string, extra: string[] = []) =>
+  works.filter((w) => (w.data.category === id && w.data.group === g) || extra.includes(w.id));
+
+const L = {
+  services: vi ? 'Dịch vụ' : 'Services',
+  skills: vi ? 'Kỹ năng' : 'Skills',
+  work: vi ? 'Tác phẩm' : 'Work',
+  next: vi ? 'Tiếp theo' : 'Next',
+};
+---
+<Base title={title} description={sp.line[lang]}>
+  <section class="sp-head container">
+    <p class="meta">[ {idx + 1}. {t('nav.specialties')} ]</p>
+    <h1 class="display"><span class="line"><span>{title}</span></span></h1>
+    <p class="sp-intro">{sp.intro[lang]}</p>
+  </section>
+
+  <section class="container">
+    <div class="sp-hero" style={`--r:${heroImg.width / heroImg.height}`}>
+      <div class="sp-hero-in">
+        {heroRiso
+          ? <Ink src={heroImg} alt={title} widths={[960, 1600, 2200]} sizes="100vw" loading="eager" contrast={1.5} />
+          : <Image src={heroImg} alt={title} widths={[960, 1600, 2200]} sizes="100vw" loading="eager" />}
+      </div>
+    </div>
+  </section>
+
+  {sp.services && (
+    <section class="container block">
+      <h2 class="meta block-label">[ {L.services} ]</h2>
+      <ol class="services">
+        {sp.services[lang].map((s, i) => (
+          <li><span class="num">{i + 1}.</span><span class="display">{s}</span></li>
+        ))}
+      </ol>
+    </section>
+  )}
+
+  {sp.groups?.map((g, gi) => {
+    const list = forGroup(g.id, g.extraWorks);
+    return (
+      <section class="container block group">
+        <h2 class="display group-title"><span class="num">{gi + 1}.</span>{g.title[lang]}</h2>
+        <ol class="services services--sm">
+          {g.services[lang].map((s) => <li><span class="display">{s}</span></li>)}
+        </ol>
+        {list.length > 0 && (
+          <ul class="works">{list.map((w) => <li><WorkCard work={w} /></li>)}</ul>
+        )}
+      </section>
+    );
+  })}
+
+  <section class="container block split">
+    <div>
+      <h2 class="meta block-label">[ {L.skills} ]</h2>
+      <ul class="chips">{sp.skills.map((s) => <li>{s}</li>)}</ul>
+    </div>
+    {sp.people && sp.peopleLabel && (
+      <div>
+        <h2 class="meta block-label">[ {sp.peopleLabel[lang]} ]</h2>
+        <p class="people display">{sp.people.join(' · ')}</p>
+      </div>
+    )}
+  </section>
+
+  {!sp.groups && byCat.length > 0 && (
+    <section class="container block">
+      <h2 class="meta block-label">[ {L.work} ]</h2>
+      <ul class="works">{byCat.map((w) => <li><WorkCard work={w} /></li>)}</ul>
+    </section>
+  )}
+
+  <section class="container block actions">
+    <a href={href(lang, `/media?tab=${id}`)} class="btn btn--signal">{t('btn.viewAll')} <span aria-hidden="true">↗</span></a>
+    <a href={href(lang, '/#contact')} class="btn">{t('cta')}</a>
+  </section>
+
+  <a href={href(lang, next.path)} class="next">
+    <span class="container next-in">
+      <span class="meta">{L.next} ↓</span>
+      <span class="display next-title">{t(`spec.${next.id}` as const)}</span>
+    </span>
+  </a>
+</Base>
+
+<script>
+  import { gsap } from '../scripts/smooth';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  gsap.from('.sp-head .line > span', { yPercent: 105, duration: 1.3, ease: 'expo.out', delay: 0.1 });
+  gsap.from('.sp-intro', { y: 20, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.5 });
+
+  if (!reduce) {
+    gsap.fromTo('.sp-hero', { clipPath: 'inset(10% 8% 10% 8%)' }, {
+      clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
+      scrollTrigger: { trigger: '.sp-hero', start: 'top 90%', end: 'top 25%', scrub: true },
+    });
+    gsap.fromTo('.sp-hero-in', { yPercent: -6 }, {
+      yPercent: 6, ease: 'none',
+      scrollTrigger: { trigger: '.sp-hero', start: 'top bottom', end: 'bottom top', scrub: true },
+    });
+    document.querySelectorAll<HTMLElement>('.services li, .works > li').forEach((el) => {
+      gsap.from(el, { y: 32, opacity: 0, ease: 'none', scrollTrigger: { trigger: el, start: 'top 95%', end: 'top 70%', scrub: true } });
+    });
+  }
+</script>
+
+<style>
+  .sp-head { padding-block: clamp(40px, 8vh, 96px) 48px; display: grid; gap: 20px; }
+  .sp-head h1 { font-size: clamp(72px, 13vw, 220px); font-weight: 800; text-transform: uppercase; line-height: 0.9; }
+  .sp-intro { max-width: 58ch; font-size: 16px; }
+
+  .sp-hero {
+    aspect-ratio: var(--r);
+    max-height: 88vh;
+    width: min(100%, calc(88vh * var(--r)));
+    overflow: hidden;
+    box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45);
+  }
+  .sp-hero-in { height: 112%; margin-top: -6%; }
+  .sp-hero-in :global(img), .sp-hero-in :global(.ink) { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .block { padding-top: clamp(64px, 12vh, 140px); }
+  .block-label { margin-bottom: 24px; }
+
+  .services { list-style: none; padding: 0; border-top: 1px solid var(--line); }
+  .services li { display: flex; align-items: baseline; gap: 0.5em; padding-block: 14px; border-bottom: 1px solid var(--line); }
+  .services .display { font-size: clamp(32px, 4.4vw, 64px); font-weight: 700; line-height: 1.05; }
+  .services--sm .display { font-size: clamp(24px, 2.8vw, 40px); }
+  .num { font-family: var(--mono); color: #a9a9b3; font-size: clamp(14px, 1.2vw, 18px); }
+
+  .group-title { display: flex; align-items: baseline; gap: 0.4em; font-size: clamp(44px, 6vw, 96px); font-weight: 800; text-transform: uppercase; margin-bottom: 20px; }
+
+  .split { display: grid; gap: 48px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
+  .chips li { border: 1px solid var(--ink); padding: 8px 14px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .people { font-size: clamp(26px, 3vw, 44px); font-weight: 600; line-height: 1.2; }
+
+  .works { list-style: none; padding: 0; columns: 1; column-gap: 28px; margin-top: 32px; }
+  .works > li { break-inside: avoid; margin-bottom: 36px; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; padding-bottom: clamp(64px, 12vh, 140px); }
+
+  .next { display: block; border-top: 1px solid var(--line); background: linear-gradient(180deg, transparent, rgba(71, 55, 255, 0.04)); }
+  .next-in { display: grid; gap: 8px; padding-block: 48px 64px; }
+  .next-title { font-size: clamp(64px, 11vw, 180px); font-weight: 800; text-transform: uppercase; line-height: 0.9; transition: color 0.3s; }
+  .next:hover .next-title { color: var(--blue); }
+
+  @media (min-width: 640px) { .works { columns: 2; } }
+  @media (min-width: 1024px) {
+    .sp-head { grid-template-columns: 1fr minmax(0, 46ch); align-items: end; column-gap: 5vw; }
+    .sp-head .meta { grid-column: 1 / -1; }
+    .split { grid-template-columns: 1fr 1fr; }
+    .works { columns: 3; }
+  }
+</style>

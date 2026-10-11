@@ -1,0 +1,99 @@
+---
+// /specialties: three fields as large rows, then the "combined" block.
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Ink from '../components/Ink.astro';
+import { specialties, combined } from '../data/specialties';
+import { getLang, useT, href } from '../i18n/utils';
+import musicHero from '../assets/personal/music-hero.jpg';
+import wcCover from '../content/works/warcross/cover.webp';
+import nobCover from '../content/works/nob-network/cover.jpg';
+import cassette from '../assets/collage/cm-05.png';
+
+const lang = getLang(Astro.url);
+const t = useT(lang);
+const vi = lang === 'vi';
+const img = { music: musicHero, visual: wcCover, marketing: nobCover };
+---
+<Base title={t('nav.specialties')}>
+  <section class="container head">
+    <h1 class="display"><span class="line"><span>{vi ? 'Chuyên môn.' : 'Specialties.'}</span></span></h1>
+  </section>
+
+  <ol class="container rows">
+    {specialties.map((sp, i) => (
+      <li class="row">
+        <a href={href(lang, sp.path)} class="row-link">
+          <div class="row-media">
+            {sp.id === 'music'
+              ? <Ink src={img[sp.id]} alt="" widths={[640, 1080]} sizes="(min-width: 1024px) 40vw, 100vw" contrast={1.5} loading={i === 0 ? 'eager' : 'lazy'} />
+              : <Image src={img[sp.id]} alt="" widths={[640, 1080]} sizes="(min-width: 1024px) 40vw, 100vw" loading={i === 0 ? 'eager' : 'lazy'} />}
+          </div>
+          <div class="row-info">
+            <span class="num">{i + 1}.</span>
+            <h2 class="display">{t(`spec.${sp.id}` as const)}</h2>
+            <p>{sp.line[lang]}</p>
+            <ul class="chips">{sp.skills.slice(0, 5).map((s) => <li>{s}</li>)}</ul>
+            <span class="row-cta">{t('btn.learnMore')} ↗</span>
+          </div>
+        </a>
+      </li>
+    ))}
+  </ol>
+
+  <section class="container combined">
+    <div class="combined-media">
+      <Image src={cassette} alt="Corrupted Moonlight cassette" widths={[480, 800]} sizes="(min-width: 1024px) 30vw, 80vw" />
+    </div>
+    <div>
+      <p class="meta">[ {vi ? 'Kết hợp' : 'Combined'} ]</p>
+      <p class="combined-text">{combined[lang]}</p>
+      <a href={href(lang, '/media?tab=music&work=corrupted-moonlight')} class="btn btn--signal">Corrupted Moonlight ↗</a>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { gsap } from '../scripts/smooth';
+  gsap.from('.head .line > span', { yPercent: 105, duration: 1.3, ease: 'expo.out', delay: 0.1 });
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll<HTMLElement>('.row').forEach((r) => {
+      gsap.fromTo(r.querySelector('.row-media'), { clipPath: 'inset(14% 10% 14% 10%)' }, {
+        clipPath: 'inset(0% 0% 0% 0%)', ease: 'none',
+        scrollTrigger: { trigger: r, start: 'top 90%', end: 'top 40%', scrub: true },
+      });
+      gsap.from(r.querySelectorAll('.row-info > *'), {
+        y: 30, opacity: 0, stagger: 0.06, ease: 'none',
+        scrollTrigger: { trigger: r, start: 'top 85%', end: 'top 50%', scrub: true },
+      });
+    });
+  }
+</script>
+
+<style>
+  .head { padding-block: clamp(40px, 8vh, 96px) 40px; }
+  .head h1 { font-size: clamp(72px, 12vw, 200px); font-weight: 800; }
+
+  .rows { list-style: none; display: grid; gap: clamp(56px, 10vh, 120px); }
+  .row-link { display: grid; gap: 24px; }
+  .row-media { aspect-ratio: 4 / 3; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  .row-media :global(img), .row-media :global(.ink) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .row-info { display: grid; gap: 16px; align-content: center; justify-items: start; }
+  .row-info h2 { font-size: clamp(56px, 8vw, 128px); font-weight: 800; text-transform: uppercase; line-height: 0.9; transition: color 0.3s; }
+  .row-link:hover h2 { color: var(--blue); }
+  .num { font-family: var(--mono); color: #a9a9b3; font-size: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; }
+  .chips li { border: 1px solid var(--line); padding: 6px 10px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .row-cta { color: var(--orange); border-bottom: 1px solid var(--orange); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .combined { display: grid; gap: 32px; padding-block: clamp(80px, 14vh, 160px); align-items: center; }
+  .combined-media { max-width: 420px; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  .combined-media :global(img) { display: block; width: 100%; height: auto; }
+  .combined-text { font-family: var(--display); font-weight: 600; font-size: clamp(26px, 2.8vw, 42px); line-height: 1.15; margin: 16px 0 28px; max-width: 30ch; }
+
+  @media (min-width: 1024px) {
+    .row-link { grid-template-columns: 5fr 4fr; gap: 6vw; }
+    .row:nth-child(even) .row-media { order: 2; }
+    .combined { grid-template-columns: 1fr 1.4fr; gap: 6vw; }
+  }
+</style>
