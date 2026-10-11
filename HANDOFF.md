@@ -5,7 +5,7 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 ## Stack & deploy
 - Astro 5 static, Lenis + GSAP ScrollTrigger, fonts Big Shoulders Display (titles, bold 700–800) + JetBrains Mono.
 - Repo `synchromancer203-beep/havik-space`, push to `main` → GitHub Actions → Pages → https://havik.space (DNS at Spaceship, HTTPS on).
-- Bilingual: VN at `/`, EN at `/en/`. UI strings `src/i18n/ui.ts`, helpers `src/i18n/utils.ts`.
+- Bilingual: EN (default) at `/`, VN at `/vi/` (owner switched the default to EN; old `/en/...` URLs redirect via `redirects` in `astro.config.mjs`). UI strings `src/i18n/ui.ts`, helpers `src/i18n/utils.ts`.
 - Pages are thin wrappers in `src/pages/**` → views in `src/views/*`.
 
 ## Content
@@ -16,7 +16,7 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 ## Done
 - Phase 0–3: infra, layout/i18n, `/media` (tabs `?tab=`, filters, masonry, lightbox, deep link `?work=<slug>`), home, `/specialties` + 3 sub-pages, `/about`, 404, privacy.
 - No `/contact` page by owner's choice: email + social icons in footer (`#contact`). Contact/CTA links are a bare `#contact` (nav path too), so they scroll to the footer of the page you are on.
-- Phase 4: page transitions (~0.8s). `src/scripts/transition.ts` + `.pt` layer (paper bg + canvas; inline renderer `window.__pt` in `Base.astro`). Internal link click → paper layer fades in (0.2s) → a band of fine Vivid Blue riso stipple (white noise, sparse leading edge, dense core; owner refs: stochastic grain gradient, never a solid blue screen) sweeps up from the bottom → navigate with the band mid-screen → next page paints that same frame (sessionStorage flag read by inline `<head>` script; grain is seeded) → band exits the top → paper fades out (0.25s). GSAP global timeline is paused until the paper fades so entrance tweens play on reveal; `ready` promise exported for things that must wait (Media deep-link lightbox). `@view-transition` keeps the frame between documents; Astro prefetch on hover. Skipped for reduced motion, new-tab/modifier clicks, external/mailto, same-page hashes and anything inside `[data-no-transition]` (the footer: owner wants transitions from the header only). bfcache restore resets the layer.
+- Phase 4: page transitions. `src/scripts/transition.ts` + `.pt` layer in `Base.astro` (paper bg + canvas). Internal link click → paper layer fades in (0.18s) while a band of fine Vivid Blue riso stipple (white-noise grain, sparse leading edge, dense core; never a solid blue screen) sweeps top → bottom (0.4s). Navigation starts when the band's core nears the bottom (`NAV_AT`); the old page keeps animating until the next is ready. With cross-document View Transitions (Chromium/Safari) the browser crossfades (0.3s) from that frame straight onto the new page; the inline `<head>` script drops the cover on `pagereveal`. Without VT (or if the browser skips it) the next page paints under the paper (sessionStorage flag) and it fades out (0.24s). GSAP global timeline is paused until reveal; `ready` promise exported for things that must wait (Media deep-link lightbox). Astro prefetch on hover. Skipped for reduced motion, new-tab/modifier clicks, external/mailto, same-page hashes and anything inside `[data-no-transition]` (the footer: owner wants transitions from the header only). bfcache restore resets the layer. Note: headless Chromium skips cross-doc VT at random (~50%); the fallback covers it.
 - Dock removed by owner's choice (header is always visible).
 
 ## Design rules (owner feedback — keep)

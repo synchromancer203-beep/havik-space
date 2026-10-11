@@ -127,6 +127,7 @@ const isActive = (path: string) => {
   .header.on-blue .item > a:hover { background: rgba(255, 255, 255, 0.12); }
   .header.on-blue .lang, .header.on-blue .lang a + a, .header.on-blue .burger { border-color: var(--paper); }
   .header.on-blue .lang a.on { background: var(--paper); color: var(--ink); }
+  .header.on-blue .sub { color: var(--ink); } /* dropdown keeps its paper panel, so keep dark text */
   .header.on-blue .lang a:not(.on):hover { background: rgba(255, 255, 255, 0.12); }
   .header.on-blue .burger i { background: var(--paper); }
   .bar { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: var(--header-h); }

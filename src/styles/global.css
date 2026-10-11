@@ -146,15 +146,18 @@ main.flush { padding-top: 0; }
   display: none;
   background: var(--paper-2);
   pointer-events: none;
+  will-change: opacity;
 }
 .pt canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .pt.on, html.pt-in .pt { display: block; }
-/* Arrived mid-transition. If the script never runs, clear the layer anyway after 3s. */
+/* Arrived under the paper layer. If the script never runs, clear it anyway after 3s. */
 html.pt-in .pt { animation: pt-safety 0.3s 3s forwards; }
 @keyframes pt-safety { to { opacity: 0; visibility: hidden; } }
 
-/* Keep the old frame on screen until the next document paints (no white flash); back/forward crossfades. */
+/* Cross-document view transitions: hold the old frame until the next document paints (no white
+   flash), then crossfade. After a link click that frame is the riso sweep; on back/forward, the page. */
 @view-transition { navigation: auto; }
+::view-transition-group(root) { animation-duration: 0.3s; animation-timing-function: ease-out; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }

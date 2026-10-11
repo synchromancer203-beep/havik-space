@@ -1,6 +1,6 @@
-export const languages = { vi: 'VN', en: 'EN' } as const;
+export const languages = { en: 'EN', vi: 'VN' } as const;
 export type Lang = keyof typeof languages;
-export const defaultLang: Lang = 'vi';
+export const defaultLang: Lang = 'en';
 
 export const site = {
   name: 'HAVIK',

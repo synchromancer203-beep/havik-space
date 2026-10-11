@@ -1,26 +1,24 @@
-// Page transitions (~0.8s). On an internal link click a paper layer fades in over the page, then a
-// band of fine Vivid Blue riso grain starts sweeping up from the bottom edge; with the band across
-// the middle, the browser navigates. The next page is flagged (sessionStorage, read by the inline
-// script in Base's <head>) so it paints the same mid-sweep frame; the band carries on off the
-// top, then the paper fades away onto the new page. The grain is drawn by the inline renderer
-// next to the layer in Base (window.__pt). GSAP's global timeline is held until the paper starts
-// to fade, so each page's entrance plays as it is revealed. Cross-document View Transitions
-// (global.css) keep the frame on screen between documents.
+// Page transitions. On an internal link click a paper layer fades in over the page and a band of
+// fine Vivid Blue riso grain sweeps down across it from the top edge to the bottom. Navigation
+// starts as the band's core nears the bottom; the old page stays on screen (and keeps animating)
+// until the next one is ready, so the sweep never stalls on load time.
+// - With cross-document View Transitions (Chromium, Safari), the browser crossfades from the old
+//   page's current frame straight onto the new page (global.css; the inline script in Base's
+//   <head> drops the paper layer on pagereveal).
+// - Otherwise the next page is flagged (sessionStorage, read by that inline script) so it paints
+//   under the paper layer, which then fades away with a compositor opacity animation.
+// GSAP's global timeline is held until then, so each page's entrance plays as it is revealed.
 import { gsap } from './smooth';
 
-type Sweep = { build: () => void; draw: (pos: number) => void };
-
 const KEY = 'pt';
+const BLUE = 0xffff3747; // #4737FF as little-endian ABGR
+const BAND = 0.9; // band height, share of the viewport
+const NAV_AT = 0.7; // sweep position to start navigating at: the band's dense core is near the bottom
 const root = document.documentElement;
 const layer = document.querySelector<HTMLElement>('.pt')!;
-const sweep = (window as any).__pt as Sweep;
+const canvas = layer.querySelector('canvas')!;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lenis = () => (window as any).__lenis;
-
-// The band accelerates into the navigation and decelerates out of it at the same speed, so the
-// two halves join without a jolt.
-const easeIn = (t: number) => t * t;
-const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
 
 let leaving = false;
 let frame = 0;
@@ -28,12 +26,47 @@ let markReady!: () => void;
 /** Resolves once the page is visible (immediately when it wasn't entered through a transition). */
 export const ready = new Promise<void>((r) => (markReady = r));
 
-/** Run step(t) for t in 0..1 over `ms`, once per animation frame. */
+// ---------- Riso band: tiny 2px cells, inked where a white-noise threshold is under the row's density
+let ctx: CanvasRenderingContext2D, img: ImageData, buf: Uint32Array, thr: Uint8Array, lv: Uint16Array, w = 0, h = 0;
+
+function build() {
+  const cell = Math.max(2, Math.ceil(Math.sqrt((innerWidth * innerHeight) / 1e6)));
+  w = Math.ceil(innerWidth / cell);
+  h = Math.ceil(innerHeight / cell);
+  canvas.width = w;
+  canvas.height = h;
+  ctx = canvas.getContext('2d')!;
+  img = ctx.createImageData(w, h);
+  buf = new Uint32Array(img.data.buffer);
+  thr = new Uint8Array(w * h);
+  lv = new Uint16Array(h);
+  for (let i = 0; i < thr.length; i += 65536) crypto.getRandomValues(thr.subarray(i, i + 65536)); // 64KB cap per call
+}
+
+/** u: 0 at the band's leading edge, 1 at its trailing edge. Sparse lead, dense core, short tail. */
+const density = (u: number) =>
+  u <= 0 || u >= 1 ? 0 : u < 0.8 ? (u / 0.8) ** 1.8 : 1 - ((u - 0.8) / 0.2) ** 0.7;
+
+/** pos: 0 = band just above the screen, 1 = gone off the bottom. Moving down, it leads with its lower edge. */
+function draw(pos: number) {
+  const lead = (pos * (1 + BAND)) * h; // leading edge, in rows from the top
+  const bh = BAND * h;
+  for (let y = 0; y < h; y++) lv[y] = density((lead - y) / bh) * 256;
+  for (let y = 0, i = 0; y < h; y++) {
+    const l = lv[y];
+    if (!l) { buf.fill(0, i, i + w); i += w; continue; }
+    for (let x = 0; x < w; x++, i++) buf[i] = thr[i] < l ? BLUE : 0;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/** Run step(t) for t in 0..1 over `ms`, timed from the first animation frame so it never jumps. */
 function play(ms: number, step: (t: number) => void) {
   cancelAnimationFrame(frame);
   return new Promise<void>((done) => {
-    const start = performance.now();
+    let start = 0;
     const tick = (now: number) => {
+      start ||= now;
       const t = Math.min(1, (now - start) / ms);
       step(t);
       if (t < 1) frame = requestAnimationFrame(tick);
@@ -43,6 +76,9 @@ function play(ms: number, step: (t: number) => void) {
   });
 }
 
+const easeInOut = (t: number) => -(Math.cos(Math.PI * t) - 1) / 2;
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 function hide() {
   cancelAnimationFrame(frame);
   layer.getAnimations().forEach((a) => a.cancel());
@@ -50,34 +86,44 @@ function hide() {
   root.classList.remove('pt-in');
 }
 
-async function arrive() {
-  layer.classList.add('on');
-  root.classList.remove('pt-in');
-  const fonts = Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 500))]);
-  await play(220, (t) => sweep.draw(0.5 + 0.5 * easeOut(t)));
-  await fonts;
-  gsap.globalTimeline.resume();
-  markReady();
-  layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, easing: 'ease-in-out' }).finished.then(hide, () => {});
-}
-
-function leave(url: string) {
+async function leave(url: string) {
   leaving = true;
   lenis()?.stop();
   try { sessionStorage.setItem(KEY, String(Date.now())); } catch {}
-  sweep.build(); // fresh for the current viewport, so it matches what the next page draws
-  sweep.draw(0);
+  build();
+  draw(0);
   layer.classList.add('on');
-  layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
-  setTimeout(() => play(220, (t) => sweep.draw(0.5 * easeIn(t))).then(() => location.assign(url)), 130);
+  layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out', fill: 'forwards' });
+  await wait(80);
+  let going = false;
+  await play(400, (t) => {
+    const pos = easeInOut(t);
+    draw(pos);
+    if (!going && pos >= NAV_AT) { going = true; location.assign(url); }
+  });
 }
 
-if (root.classList.contains('pt-in')) {
+async function arrive() {
   gsap.globalTimeline.pause();
-  arrive();
-} else {
+  const w = window as any;
+  if ('onpagereveal' in window && !w.__ptReveal) await new Promise((r) => addEventListener('pt:reveal', r, { once: true }));
+  if (w.__ptReveal === 'vt') {
+    // The browser is crossfading onto this page already.
+    hide();
+    gsap.globalTimeline.resume();
+    markReady();
+    return;
+  }
+  await Promise.race([document.fonts.ready, wait(100)]);
+  layer.classList.add('on');
+  root.classList.remove('pt-in');
+  gsap.globalTimeline.resume();
   markReady();
+  layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out' }).finished.then(hide, () => {});
 }
+
+if (root.classList.contains('pt-in')) arrive();
+else markReady();
 
 document.addEventListener('click', (e) => {
   if (reduce || leaving || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
