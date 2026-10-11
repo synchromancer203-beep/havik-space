@@ -73,31 +73,32 @@ main { flex: 1; }
 }
 .frame--flush > .frame-in { padding-top: 0; }
 
-/* Paged: the page never scrolls; frames are stacked screens moved by frames.ts. */
+/* Paged: the page never scrolls. Frames are stacked, transparent screens; frames.ts paints their
+   backgrounds on a fixed backdrop (.frames-bg) and moves only their content, via --fy (svh). */
 html.paged, html.paged body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 html.paged .frame {
   position: fixed; inset: 0;
   height: 100svh; min-height: 0;
   overflow: hidden;
-  transform: translateY(1000vh); /* parked until frames.ts places it */
-  transform-origin: 50% 50%;
-  will-change: transform;
-  box-shadow: 0 -24px 48px rgba(7, 6, 26, 0.22);
 }
-/* Before the script runs, show the first frame where it will be. */
-html.paged:not(.frames-on) main > section.frame:first-of-type { transform: none; } /* every page opens on a section */
+html.paged.frames-on .frame { background: none; }
+html.paged .frame:not(.is-current) { pointer-events: none; }
+/* Before the script runs, show only the first frame. */
+html.paged:not(.frames-on) .frame { visibility: hidden; }
+html.paged:not(.frames-on) main > section.frame:first-of-type { visibility: visible; --fy: 0; } /* every page opens on a section */
 html.paged .frame-in {
   height: 100%; min-height: 0;
   overflow-x: hidden; overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  transform: translate3d(0, calc(var(--fy, 1000) * 1svh), 0);
+  will-change: transform;
 }
 html.paged .frame-in::-webkit-scrollbar { display: none; }
-/* Darkens a frame as it recedes behind the next one (driven by --shade). */
-html.paged .frame::after {
-  content: ''; position: absolute; inset: 0; z-index: 10; pointer-events: none;
-  background: #07061a; opacity: var(--shade, 0);
-}
+/* Media runs a little ahead of the text while the track moves (depth). */
+html.paged .frame [data-depth] { translate: 0 calc(var(--fy, 0) * 0.16svh); }
+.frames-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.frames-bg > div { position: absolute; inset: 0; opacity: 0; }
 
 /* Graph-paper grid background */
 .grid-bg {

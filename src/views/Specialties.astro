@@ -31,7 +31,7 @@ const img = { music: musicHero, visual: wcCover, marketing: nobCover };
   {specialties.map((sp, i) => (
     <Frame class="row" inner="container row-in">
       <a href={href(lang, sp.path)} class="row-link">
-        <div class="row-media" data-enter>
+        <div class="row-media" data-enter data-depth>
           {sp.id === 'music'
             ? <Ink src={img[sp.id]} alt="" widths={[640, 1080]} sizes="(min-width: 1024px) 44vw, 90vw" contrast={1.5} />
             : <Image src={img[sp.id]} alt="" widths={[640, 1080]} sizes="(min-width: 1024px) 44vw, 90vw" />}
@@ -48,7 +48,7 @@ const img = { music: musicHero, visual: wcCover, marketing: nobCover };
   ))}
 
   <Frame class="combined" inner="container combined-in">
-    <div class="combined-media" data-enter>
+    <div class="combined-media" data-enter data-depth>
       <Image src={cassette} alt="Corrupted Moonlight cassette" widths={[480, 800]} sizes="(min-width: 1024px) 30vw, 70vw" />
     </div>
     <div>

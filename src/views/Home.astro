@@ -57,9 +57,9 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   }));
 ---
 <Base>
-  <!-- HERO: dark portrait plate. The next frame slides over it while it recedes (frames.ts). -->
+  <!-- HERO: dark portrait plate (its blue is the backdrop; frames.ts crossfades it out). -->
   <Frame class="hero" inner="hero-in" flush theme="dark">
-    <div class="hero-photo">
+    <div class="hero-photo" data-depth>
       <div class="hero-photo-in">
         <Ink src={hero} alt="Havik" widths={[480, 800, 1080]} sizes="(min-width: 768px) 57vh, 100vw" loading="eager" contrast={1.7} />
       </div>
@@ -79,6 +79,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
         <div
           class="tile"
           data-enter
+          data-depth
           style={`--dx:${tl.d[0]}%;--dy:${tl.d[1]}%;--dw:${tl.d[2]}vw;--mx:${tl.m[0]}%;--my:${tl.m[1]}%;--mw:${tl.m[2]}vw;--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
         >
           <div class="tile-in"><Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
@@ -101,7 +102,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   {featured.map((f, i) => (
     <Frame class="case" inner="container case-in">
       <a href={href(lang, `/media?tab=${f.tab}&work=${f.id}`)} class="case-link">
-        <div class="case-media" data-enter style={`--r:${f.img.width / f.img.height}`}>
+        <div class="case-media" data-enter data-depth style={`--r:${f.img.width / f.img.height}`}>
           <Image src={f.img} alt={f.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 56vw, 100vw" />
         </div>
         <div class="case-info">
@@ -167,7 +168,15 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
       linear-gradient(180deg, #f5f5f7 0%, #ececf0 100%);
   }
   /* The stage holds its own background so the blended words have something to invert against. */
-  .fields :global(.f-stage) { position: relative; justify-content: safe center; isolation: isolate; background: var(--frame-bg); }
+  /* In the paged layout it stays put and fades with the backdrop (--fy, --bgo: frames.ts), so it
+     never reads as a sliding sheet. */
+  /* overflow: visible so the frame (the viewport), not the moving stage, clips that background. */
+  .fields :global(.f-stage) { position: relative; justify-content: safe center; isolation: isolate; overflow: visible; }
+  .fields :global(.f-stage)::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    background: var(--frame-bg); opacity: var(--bgo, 1);
+    translate: 0 calc(var(--fy, 0) * -1svh);
+  }
   .collage { position: absolute; inset: var(--header-h) 0 0; }
   .tile {
     position: absolute;

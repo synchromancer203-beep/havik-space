@@ -109,7 +109,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
         return (
           <>
             <Frame as="article" class="m-frame m-cover" inner="container m-in m-cover-in" id={`work-${w.id}`} data-tab={tb.id} data-work={w.id}>
-              <div class="m-cover-media" data-enter>
+              <div class="m-cover-media" data-enter data-depth>
                 {w.data.cover ? (
                   <Image src={w.data.cover} alt={w.data.title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 52vw, 90vw" style={`--r:${w.data.cover.width / w.data.cover.height}`} />
                 ) : (
@@ -149,7 +149,7 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
               <Frame class="m-frame m-gallery" inner="container m-in m-gallery-in" data-tab={tb.id}>
                 <div class="g-row">
                   {row.map((g, gi) => (
-                    <figure class="g-item" data-enter style={`--a:${(g.width / g.height).toFixed(3)};--ia:${(g.height / g.width).toFixed(3)}`}>
+                    <figure class="g-item" data-enter data-depth style={`--a:${(g.width / g.height).toFixed(3)};--ia:${(g.height / g.width).toFixed(3)}`}>
                       <Image src={g} alt={`${w.data.title} ${ri * 3 + gi + 1}`} widths={[640, 1080, 1600]} sizes={row.length === 1 ? '(min-width: 1024px) 80vw, 100vw' : '(min-width: 1024px) 45vw, 100vw'} />
                     </figure>
                   ))}

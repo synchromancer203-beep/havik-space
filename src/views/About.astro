@@ -20,7 +20,7 @@ const [lead, ...rest] = bio[lang];
 ---
 <Base title={t('nav.about')}>
   <Frame class="intro" inner="container intro-in">
-    <div class="portrait" data-enter>
+    <div class="portrait" data-enter data-depth>
       <Ink src={portrait} alt="Havik" widths={[480, 844]} sizes="(min-width: 1024px) 34vw, 60vw" loading="eager" contrast={1.45} />
     </div>
     <div class="intro-text">
@@ -47,10 +47,10 @@ const [lead, ...rest] = bio[lang];
   <Frame class="tl" inner="container tl-in tl-photos">
     <TimelineSection s={sec.awards} lang={lang} />
     <div class="photos">
-      <figure class="ph ph-work" data-enter>
+      <figure class="ph ph-work" data-enter data-depth>
         <Image src={working} alt={vi ? 'Biểu diễn live electronic' : 'Live electronic set'} widths={[640, 1080]} sizes="(min-width: 1024px) 30vw, 60vw" />
       </figure>
-      <figure class="ph ph-kid" data-enter>
+      <figure class="ph ph-kid" data-enter data-depth>
         <Image src={childhood} alt={vi ? 'Ảnh tuổi thơ, 2004' : 'Childhood photo, 2004'} widths={[480, 800]} sizes="(min-width: 1024px) 18vw, 40vw" />
         <figcaption class="meta">2004</figcaption>
       </figure>

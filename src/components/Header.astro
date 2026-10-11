@@ -100,8 +100,10 @@ const isActive = (path: string) => {
   const header = document.querySelector<HTMLElement>('.header')!;
   const probe = () => {
     const y = header.offsetHeight / 2;
-    const under = document.elementsFromPoint(innerWidth / 2, y).find((el) => !header.contains(el));
-    const dark = under?.closest('[data-theme]')?.getAttribute('data-theme') === 'dark';
+    const root = document.documentElement;
+    // Paged (scripts/frames.ts): frames are see-through, so ask which background is showing.
+    const under = root.classList.contains('frames-on') ? null : document.elementsFromPoint(innerWidth / 2, y).find((el) => !header.contains(el));
+    const dark = under === null ? root.dataset.under === 'dark' : under?.closest('[data-theme]')?.getAttribute('data-theme') === 'dark';
     header.classList.toggle('on-blue', dark && menu?.hidden !== false);
   };
   let queued = false;

@@ -51,7 +51,7 @@ const L = {
       <h1 class="display" data-enter="rise"><span class="line"><span>{title}</span></span></h1>
       <p class="sp-intro" data-enter>{sp.intro[lang]}</p>
     </div>
-    <div class="sp-hero" style={`--r:${heroImg.width / heroImg.height}`} data-enter>
+    <div class="sp-hero" style={`--r:${heroImg.width / heroImg.height}`} data-enter data-depth>
       {heroRiso
         ? <Ink src={heroImg} alt={title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 50vw, 90vw" loading="eager" contrast={1.5} />
         : <Image src={heroImg} alt={title} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 50vw, 90vw" loading="eager" />}

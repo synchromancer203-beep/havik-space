@@ -1,7 +1,9 @@
 // Paged scrolling. Every `.frame` (components/Frame.astro) is one screen; one wheel flick, swipe
-// or key press moves exactly one frame. The next frame slides up over the current one, which
-// recedes (shrinks, darkens) behind it; the move eases out so it settles gently. A frame taller
-// than the screen scrolls inside first, then hands over to the next frame on a fresh gesture.
+// or key press moves exactly one frame. The background never moves: it sits on a fixed backdrop
+// (one layer per frame) that crossfades to the next frame's colour. Only the content travels, as
+// one invisible track sliding up or down, with media ([data-depth]) running a little ahead of the
+// text for depth; the move eases out so it settles gently. A frame taller than the screen scrolls
+// inside first, then hands over to the next frame on a fresh gesture.
 //
 // Only active when the inline script in Base's <head> has set html.paged (not under reduced
 // motion). Without it, frames are ordinary full-height sections in a normally scrolling page.
@@ -10,40 +12,66 @@ import { gsap } from './smooth';
 const root = document.documentElement;
 const DUR = 1.15;
 const EASE = 'expo.out';
-const RECEDE = { scale: 0.92, yPercent: -4, '--shade': 0.55 };
+const FAR = 1000; // parking offset (svh) for frames more than one away, so their lazy images wait
 
 let frames: HTMLElement[] = [];
+let layers: HTMLElement[] = [];
 let index = 0;
 let busy = false;
+let tween: gsap.core.Tween | null = null;
 let lastWheel = 0;
 let lastDelta = 0;
 let lastInner = 0;
 
+const backdrop = document.createElement('div');
+backdrop.className = 'frames-bg';
+backdrop.setAttribute('aria-hidden', 'true');
+
 const inner = (f: HTMLElement) => f.querySelector<HTMLElement>(':scope > .frame-in')!;
+const theme = (f?: HTMLElement) => f?.dataset.theme ?? '';
+/** Content offset in svh (0 = in place, 100 = one screen below). CSS turns it into transforms. */
+const setY = (f: HTMLElement, y: number) => f.style.setProperty('--fy', String(y));
+/** How much of the frame's own background shows (also drives backgrounds held inside content). */
+const setBg = (k: number, o: number) => {
+  layers[k].style.opacity = String(o);
+  frames[k].style.setProperty('--bgo', String(o));
+};
+function setUnder(f: HTMLElement) {
+  const u = theme(f);
+  if (root.dataset.under !== u) root.dataset.under = u;
+}
+
 /** Can the frame's own content still scroll in this direction? */
 function canScroll(f: HTMLElement, dir: number) {
   const s = inner(f);
   // Frames that clip their content (the hero), and a few px of slack from an entrance still
   // settling, don't count as scrollable.
-  if (s.scrollHeight - s.clientHeight <= 4 || getComputedStyle(s).overflowY === 'hidden') return false;
+  if (s.scrollHeight - s.clientHeight <= 4 || ['hidden', 'visible'].includes(getComputedStyle(s).overflowY)) return false;
   return dir > 0 ? s.scrollTop + s.clientHeight < s.scrollHeight - 1 : s.scrollTop > 0;
 }
 
-/** Park every frame for the current index: current in place, the one before receded behind it,
- *  the one after waiting just below, the rest far away (so their lazy images don't load yet).
- *  Nothing is hidden, so assistive tech and Tab still reach every frame. */
+/** One backdrop layer per frame, painted with that frame's --frame-bg. */
+function buildBackdrop() {
+  backdrop.replaceChildren(...frames.map((f) => {
+    const l = document.createElement('div');
+    l.style.background = getComputedStyle(f).getPropertyValue('--frame-bg');
+    return l;
+  }));
+  layers = [...backdrop.children] as HTMLElement[];
+}
+
+/** Park every frame for the current index: current in place, neighbours one screen above/below,
+ *  the rest far away. Nothing is hidden, so assistive tech and Tab still reach every frame. */
 function place() {
   frames.forEach((f, k) => {
-    gsap.killTweensOf(f);
     const d = k - index;
     f.classList.toggle('is-current', d === 0);
     f.style.zIndex = d === 0 ? '2' : '1';
-    // y: 0 clears the CSS parking offset, which GSAP would otherwise read as a pixel y.
-    if (d === 0) gsap.set(f, { y: 0, yPercent: 0, scale: 1, '--shade': 0 });
-    else if (d === -1) gsap.set(f, { y: 0, ...RECEDE });
-    else if (d === 1) gsap.set(f, { y: 0, yPercent: 100, scale: 1, '--shade': 0 });
-    else gsap.set(f, { y: 0, yPercent: d < 0 ? -1000 : 1000, scale: 1, '--shade': 0 });
+    setY(f, Math.abs(d) > 1 ? Math.sign(d) * FAR : d * 100);
+    layers[k].style.zIndex = d === 0 ? '1' : '0';
+    setBg(k, d === 0 ? 1 : 0);
   });
+  setUnder(frames[index]);
 }
 
 /** Entrance for what's inside a frame as it arrives: masked lines rise, marked items drift up. */
@@ -62,14 +90,16 @@ function remember() {
   try { history.replaceState({ ...(history.state ?? {}), frame: index }, ''); } catch {}
 }
 
-/** Go to frame n. Neighbours slide; longer jumps bring the target in from below the same way. */
+/** Go to frame n. The content track slides one screen; longer jumps bring the target in from the
+ *  same side as a neighbour would. */
 export function goTo(n: number, { instant = false } = {}) {
   n = Math.max(0, Math.min(frames.length - 1, n));
   if (n === index || !frames.length) return;
-  const from = frames[index];
-  const to = frames[n];
+  if (tween) { tween.kill(); tween = null; place(); } // interrupted: finish the last move at once
+  const a = index;
   const dir = n > index ? 1 : -1;
-  const prev = index;
+  const from = frames[a];
+  const to = frames[n];
   index = n;
   remember();
 
@@ -82,30 +112,28 @@ export function goTo(n: number, { instant = false } = {}) {
   }
 
   busy = true;
-  frames.forEach((f) => gsap.killTweensOf(f));
-  inner(to).scrollTop = dir > 0 ? 0 : inner(to).scrollTop;
-  const tick = () => emit('frames:update');
-
-  if (dir > 0) {
-    // Forward: the target slides up over the current frame, which recedes.
-    to.style.zIndex = '3';
-    from.style.zIndex = '2';
-    gsap.set(to, { yPercent: 100, scale: 1, '--shade': 0 });
-    gsap.to(from, { ...RECEDE, duration: DUR, ease: EASE });
-    gsap.to(to, { yPercent: 0, duration: DUR, ease: EASE, onUpdate: tick });
-  } else {
-    // Back: the current frame slides down off the target, which comes forward again.
-    from.style.zIndex = '3';
-    to.style.zIndex = '2';
-    if (prev - n > 1) gsap.set(to, RECEDE);
-    gsap.to(from, { yPercent: 100, duration: DUR, ease: EASE, onUpdate: tick });
-    gsap.to(to, { yPercent: 0, scale: 1, '--shade': 0, duration: DUR, ease: EASE });
-  }
+  if (dir > 0) inner(to).scrollTop = 0;
+  to.style.zIndex = '3';
+  layers[n].style.zIndex = '2';
+  const st = { p: 0 };
+  const draw = () => {
+    const p = st.p;
+    setY(from, -dir * p * 100);
+    setY(to, dir * (1 - p) * 100);
+    setBg(n, p);
+    setBg(a, 1 - p * p); // the old colour holds a moment longer under the new one
+    setUnder(p > 0.5 ? to : from);
+    emit('frames:update');
+  };
+  draw();
+  tween = gsap.to(st, {
+    p: 1, duration: DUR, ease: EASE, onUpdate: draw,
+    onComplete: () => { tween = null; place(); emit('frames:settle'); },
+  });
   enter(to);
   emit('frames:change');
-  // Accept the next gesture once the move has mostly settled; tidy up when it has fully.
+  // Accept the next gesture once the move has mostly settled.
   gsap.delayedCall(DUR * 0.55, () => { busy = false; });
-  gsap.delayedCall(DUR, () => { place(); emit('frames:settle'); });
 }
 
 export const next = () => goTo(index + 1);
@@ -116,8 +144,10 @@ export const frameOf = (el: Element | null) => frames.findIndex((f) => !!el && f
 
 /** Re-read the frame list (e.g. after hiding/showing frames) and land on frame n. */
 export function refresh(n = 0) {
+  if (tween) { tween.kill(); tween = null; }
   frames = [...document.querySelectorAll<HTMLElement>('.frame')].filter((f) => !f.hidden);
   index = Math.max(0, Math.min(frames.length - 1, n));
+  buildBackdrop();
   place();
   emit('frames:change');
   emit('frames:settle');
@@ -204,6 +234,7 @@ function onFocus(e: FocusEvent) {
 }
 
 if (root.classList.contains('paged')) {
+  document.body.prepend(backdrop);
   refresh(0);
   const fromHash = location.hash ? frameOf(document.getElementById(decodeURIComponent(location.hash.slice(1)))) : -1;
   const saved = typeof history.state?.frame === 'number' ? history.state.frame : -1;
