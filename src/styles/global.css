@@ -139,18 +139,18 @@ main.flush { padding-top: 0; }
 .skip:focus { top: 8px; }
 
 /* ---------- Page transition (scripts/transition.ts) ---------- */
-/* Riso veil: a low-res canvas scaled up crisp, so each cell is a tiny square dot.
-   Above header/menu, under the paper noise. */
+/* Paper layer with the riso sweep on top: a low-res canvas scaled up crisp, so each cell is a
+   tiny square dot. Above header/menu, under the paper noise. */
 .pt {
   position: fixed; inset: 0; z-index: 90;
-  width: 100%; height: 100%;
   display: none;
+  background: var(--paper-2);
   pointer-events: none;
-  image-rendering: pixelated;
 }
+.pt canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .pt.on, html.pt-in .pt { display: block; }
-/* Arrived veiled. If the script never runs, clear the veil anyway after 3s. */
-html.pt-in .pt { animation: pt-safety 0.4s 3s forwards; }
+/* Arrived mid-transition. If the script never runs, clear the layer anyway after 3s. */
+html.pt-in .pt { animation: pt-safety 0.3s 3s forwards; }
 @keyframes pt-safety { to { opacity: 0; visibility: hidden; } }
 
 /* Keep the old frame on screen until the next document paints (no white flash); back/forward crossfades. */
