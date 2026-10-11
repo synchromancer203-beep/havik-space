@@ -41,7 +41,7 @@ const tiles: Tile[] = [
   // back first, so the entrance brings them in before the front ones
   { src: open,      d: [60, 6, 20, 'b'],   m: [63, 39, 44, 'f'] },
   { src: cm09,      d: [84, 52, 12, 'b'],  m: [74, 14, 22, 'f'] },
-  { src: wc,        d: [55, 60, 13, 'b'],  m: null },
+  { src: wc,        d: [52, 50, 16, 'b'],  m: null },
   { src: cm05,      d: [34, 14, 10, 'b'],  m: null },
   { src: liveNov,   d: [76, 36, 21, 'f'],  m: [40, 70, 52, 'b'] },
   { src: musicHero, d: [53.5, 20, 14, 'f'],  m: [30, 2, 52, 'b'] },
@@ -295,6 +295,9 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
     .hero-cta { left: var(--gutter); right: auto; bottom: calc(6vh + 22vw + 16px); }
+  }
+  /* Phones, and tablets held upright, use the tall collage with the words in the middle. */
+  @media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
     .collage { justify-content: center; }
     .collage-box { width: min(100%, calc((100svh - var(--header-h)) * 0.5)); aspect-ratio: 390 / 780; }
     .tile { left: var(--mx); top: var(--my); width: var(--mw); }
@@ -305,6 +308,6 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     .m-b .tile-in { opacity: 0.45; animation-duration: 13s; }
     .m-f { z-index: 1; }
     .m-f .tile-in { box-shadow: 0 20px 40px -18px rgba(32, 32, 48, 0.5); }
-    .f-word .display { font-size: clamp(48px, min(16.5vw, 8.5svh), 72px); }
+    .f-word .display { font-size: clamp(48px, min(16.5vw, 8.5svh), 120px); }
   }
 </style>
