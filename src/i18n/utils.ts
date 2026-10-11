@@ -55,5 +55,6 @@ export const nav: NavItem[] = [
       // Blog hidden until the first post exists.
     ],
   },
+  { key: 'nav.books', path: '/bookshelf' },
   { key: 'nav.contact', path: '#contact' },
 ];

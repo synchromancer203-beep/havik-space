@@ -25,4 +25,18 @@ const works = defineCollection({
     }),
 });
 
-export const collections = { works };
+// Bookshelf: one file per book, src/content/books/<slug>.md (+ its cover image next to it).
+// Shown cover only, with title, author and year underneath; lower order comes first.
+const books = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/books' }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      author: z.string(),
+      year: z.union([z.number(), z.string()]),
+      cover: image(),
+      order: z.number().default(99),
+    }),
+});
+
+export const collections = { works, books };

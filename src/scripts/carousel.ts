@@ -3,10 +3,13 @@
 // the mouse, swipe sideways on touch, or scroll sideways (trackpad, Shift + wheel) to move it;
 // a release keeps some momentum. Vertical gestures are left to the frames (scripts/frames.ts).
 // If everything already fits, the rows just sit centred and nothing moves.
+// A track can fix its row count (data-rows) and drift on its own like a conveyor (data-auto, px
+// per frame); the drift pauses under the mouse, while dragging and for a moment after a gesture.
 
 const mobile = matchMedia('(max-width: 767px)');
 const rowsFor = (n: number) => (mobile.matches ? (n < 10 ? 2 : 3) : n < 5 ? 1 : n <= 12 ? 2 : 3);
 const mod = (a: number, n: number) => ((a % n) + n) % n;
+const still = matchMedia('(prefers-reduced-motion: reduce)');
 
 class Carousel {
   track: HTMLElement;
@@ -19,18 +22,37 @@ class Carousel {
   raf = 0;
   /** Set while a drag is moving, so the click that ends it doesn't open the viewer. */
   dragged = false;
+  /** Conveyor drift, px per frame (0 = off), and what holds it: a pointer over or on the track,
+   *  or a recent gesture. */
+  auto: number;
+  held = false;
+  rest = 0;
 
   constructor(track: HTMLElement) {
     this.track = track;
     this.items = [...track.querySelectorAll<HTMLElement>('.g-thumb')];
+    this.auto = still.matches ? 0 : Number(track.dataset.auto) || 0;
     this.bind();
+    if (this.auto) this.drift();
   }
+
+  drift() {
+    const step = (t: number) => {
+      const shown = this.track.closest('.frame')?.classList.contains('is-current') ?? true;
+      if (this.loop && shown && !this.held && t > this.rest) this.move(this.auto);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  /** Hold the drift for a moment after a gesture. */
+  pause() { this.rest = performance.now() + 1800; }
 
   /** Spread the images over the rows (each to the currently shortest row, so rows end level),
    *  then repeat each row's run until it covers the track plus one more run. */
   build() {
     const n = this.items.length;
-    const R = Math.min(rowsFor(n), n);
+    const R = Math.min(Number(this.track.dataset.rows) || rowsFor(n), n);
     const sums = new Array(R).fill(0);
     this.rows = Array.from({ length: R }, () => {
       const r = document.createElement('div');
@@ -102,6 +124,8 @@ class Carousel {
     let lt = 0;
     let axis: '' | 'x' | 'y' = '';
 
+    t.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.held = true; });
+    t.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') this.held = false; });
     t.addEventListener('pointerdown', (e) => {
       if (!this.loop || (e.pointerType === 'mouse' && e.button !== 0)) return;
       cancelAnimationFrame(this.raf);
@@ -131,11 +155,13 @@ class Carousel {
       lx = e.clientX;
       lt = e.timeStamp;
       this.move(dx);
+      this.pause();
     });
     const end = (e: PointerEvent) => {
       if (e.pointerId !== id) return;
       id = -1;
       t.classList.remove('is-dragging');
+      this.pause();
       if (axis === 'x' && e.timeStamp - lt < 80) this.glide();
     };
     t.addEventListener('pointerup', end);
@@ -154,6 +180,7 @@ class Carousel {
       e.preventDefault();
       e.stopPropagation();
       cancelAnimationFrame(this.raf);
+      this.pause();
       this.move(dx);
     }, { passive: false });
 
