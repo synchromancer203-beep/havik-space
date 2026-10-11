@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Frame from '../components/Frame.astro';
 import { getLang, useT } from '../i18n/utils';
 import { site } from '../i18n/ui';
 
@@ -7,7 +8,7 @@ const lang = getLang(Astro.url);
 const t = useT(lang);
 ---
 <Base title={t('footer.privacy')}>
-  <section class="container wrap">
+  <Frame class="privacy" inner="container wrap">
     <p class="meta">[ DOC · PRIVACY · 2026 ]</p>
     <h1 class="display">{t('footer.privacy')}</h1>
     {lang === 'vi' ? (
@@ -25,11 +26,11 @@ const t = useT(lang);
         <p>Questions: <a href={`mailto:${site.email}`}>{site.email}</a></p>
       </div>
     )}
-  </section>
+  </Frame>
 </Base>
 
 <style>
-  .wrap { padding-block: clamp(40px, 8vw, 96px); }
+  .privacy :global(.wrap) { justify-content: safe center; padding-bottom: 5vh; }
   h1 { font-size: clamp(28px, 4.5vw, 60px); margin: 16px 0 32px; }
   .body { max-width: 64ch; display: grid; gap: 16px; }
   .body a { border-bottom: 1px solid var(--blue); }

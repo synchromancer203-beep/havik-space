@@ -1,12 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
+import Frame from '../components/Frame.astro';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
 const t = useT(lang);
 ---
 <Base title="404" noindex>
-  <section class="wrap">
+  <Frame class="nf" inner="wrap">
     <div class="container">
       <div class="box">
         <p class="meta">ERR_404 · SIGNAL LOST</p>
@@ -21,11 +22,11 @@ const t = useT(lang);
         </div>
       </div>
     </div>
-  </section>
+  </Frame>
 </Base>
 
 <style>
-  .wrap { padding-block: clamp(40px, 10vw, 120px); }
+  .nf :global(.wrap) { justify-content: safe center; padding-bottom: 5vh; }
   .box { padding: clamp(20px, 4vw, 48px); display: grid; gap: 24px; }
   h1 { font-size: clamp(32px, 7vw, 100px); }
   h1 span { color: var(--orange); }

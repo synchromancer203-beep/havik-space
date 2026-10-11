@@ -107,6 +107,8 @@ const isActive = (path: string) => {
   let queued = false;
   addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(() => { probe(); queued = false; }); } }, { passive: true });
   addEventListener('resize', probe);
+  addEventListener('frames:update', probe); // paged layout (scripts/frames.ts): the page itself doesn't scroll
+  addEventListener('frames:settle', probe);
   btn?.addEventListener('click', probe);
   probe();
 </script>

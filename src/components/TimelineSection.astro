@@ -1,0 +1,20 @@
+---
+// One section of the /about timeline (work, education, …): numbered title and its entries.
+import type { Section } from '../data/about';
+import type { Lang } from '../i18n/ui';
+
+interface Props { s: Section & { n: number }; lang: Lang; }
+const { s, lang } = Astro.props;
+---
+<div class="tl-sec">
+  <h2 class="display tl-title" data-enter="rise"><span class="num">{s.n}.</span><span class="line"><span>{s.title[lang]}</span></span></h2>
+  <ol class="tl-list">
+    {s.entries.map((e) => (
+      <li data-enter>
+        <span class="tl-when meta">{e.when}</span>
+        <span class="tl-what">{e.what[lang]}</span>
+        {e.where && <span class="tl-where">{e.where[lang]}</span>}
+      </li>
+    ))}
+  </ol>
+</div>

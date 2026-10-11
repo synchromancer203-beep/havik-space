@@ -12,6 +12,8 @@ export default defineConfig({
   ],
   // Inline the (small) stylesheets: one round trip less before first paint.
   build: { inlineStylesheets: 'always' },
+  // Scope by class, so a page's scoped styles reach components it passes `class` to (Frame).
+  scopedStyleStrategy: 'class',
   // Fetch the next page on hover so it is ready by the time the transition reaches it.
   prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   i18n: {

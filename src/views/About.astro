@@ -1,8 +1,11 @@
 ---
-// /about: name + portrait (riso, personal photo) → bio → timeline → skills → photos.
+// /about, as frames: portrait + name + lead → rest of the bio → work → education & certificates →
+// awards with photos → skills → footer.
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Ink from '../components/Ink.astro';
+import Frame from '../components/Frame.astro';
+import TimelineSection from '../components/TimelineSection.astro';
 import { bio, timeline, skills } from '../data/about';
 import { getLang, useT, href } from '../i18n/utils';
 import portrait from '../assets/about/chan-dung.jpg';
@@ -12,114 +15,106 @@ import childhood from '../assets/about/tuoi-tho.jpg';
 const lang = getLang(Astro.url);
 const t = useT(lang);
 const vi = lang === 'vi';
+const sec = Object.fromEntries(timeline.map((s, i) => [s.id, { ...s, n: i + 1 }]));
+const [lead, ...rest] = bio[lang];
 ---
 <Base title={t('nav.about')}>
-  <section class="container head">
-    <p class="meta">[ 3. {t('nav.about')} ]</p>
-    <h1 class="display"><span class="line"><span>Havik</span></span></h1>
-    <p class="meta sub">{vi ? 'Hà Nội · Âm nhạc · Đồ họa · Marketing' : 'Hanoi · Music · Visual · Marketing'}</p>
-  </section>
-
-  <section class="container intro">
-    <div class="portrait">
-      <Ink src={portrait} alt="Havik" widths={[480, 844]} sizes="(min-width: 1024px) 34vw, 90vw" loading="eager" contrast={1.45} />
+  <Frame class="intro" inner="container intro-in">
+    <div class="portrait" data-enter>
+      <Ink src={portrait} alt="Havik" widths={[480, 844]} sizes="(min-width: 1024px) 34vw, 60vw" loading="eager" contrast={1.45} />
     </div>
-    <div class="bio">
-      {bio[lang].map((p) => <p>{p}</p>)}
-      <a href={href(lang, '/media')} class="btn btn--signal">{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
+    <div class="intro-text">
+      <h1 class="display" data-enter="rise"><span class="line"><span>Havik</span></span></h1>
+      <p class="meta sub" data-enter>{vi ? 'Hà Nội · Âm nhạc · Đồ họa · Marketing' : 'Hanoi · Music · Visual · Marketing'}</p>
+      <p class="lead" data-enter>{lead}</p>
     </div>
-  </section>
+  </Frame>
 
-  <section class="container timeline">
-    {timeline.map((sec, si) => (
-      <div class="tl-sec">
-        <h2 class="display tl-title"><span class="num">{si + 1}.</span>{sec.title[lang]}</h2>
-        <ol class="tl-list">
-          {sec.entries.map((e) => (
-            <li>
-              <span class="tl-when meta">{e.when}</span>
-              <span class="tl-what">{e.what[lang]}</span>
-              {e.where && <span class="tl-where">{e.where[lang]}</span>}
-            </li>
-          ))}
-        </ol>
-      </div>
-    ))}
-  </section>
+  <Frame class="bio" inner="container bio-in">
+    {rest.map((p) => <p data-enter>{p}</p>)}
+    <a href={href(lang, '/media')} class="btn btn--signal" data-enter>{t('btn.viewWork')} <span aria-hidden="true">↗</span></a>
+  </Frame>
 
-  <section class="container photos">
-    <figure class="ph ph-work">
-      <Image src={working} alt={vi ? 'Biểu diễn live electronic' : 'Live electronic set'} widths={[640, 1080]} sizes="(min-width: 1024px) 38vw, 90vw" />
-    </figure>
-    <figure class="ph ph-kid">
-      <Image src={childhood} alt={vi ? 'Ảnh tuổi thơ, 2004' : 'Childhood photo, 2004'} widths={[480, 800]} sizes="(min-width: 1024px) 24vw, 60vw" />
-      <figcaption class="meta">2004</figcaption>
-    </figure>
-  </section>
+  <Frame class="tl" inner="container tl-in">
+    <TimelineSection s={sec.work} lang={lang} />
+  </Frame>
 
-  <section class="container skills">
-    <h2 class="meta">[ {vi ? 'Kỹ năng' : 'Skills'} ]</h2>
+  <Frame class="tl" inner="container tl-in tl-two">
+    <TimelineSection s={sec.edu} lang={lang} />
+    <TimelineSection s={sec.certs} lang={lang} />
+  </Frame>
+
+  <Frame class="tl" inner="container tl-in tl-photos">
+    <TimelineSection s={sec.awards} lang={lang} />
+    <div class="photos">
+      <figure class="ph ph-work" data-enter>
+        <Image src={working} alt={vi ? 'Biểu diễn live electronic' : 'Live electronic set'} widths={[640, 1080]} sizes="(min-width: 1024px) 30vw, 60vw" />
+      </figure>
+      <figure class="ph ph-kid" data-enter>
+        <Image src={childhood} alt={vi ? 'Ảnh tuổi thơ, 2004' : 'Childhood photo, 2004'} widths={[480, 800]} sizes="(min-width: 1024px) 18vw, 40vw" />
+        <figcaption class="meta">2004</figcaption>
+      </figure>
+    </div>
+  </Frame>
+
+  <Frame class="skills" inner="container skills-in">
+    <h2 class="display sk-head" data-enter="rise"><span class="line"><span>{vi ? 'Kỹ năng' : 'Skills'}</span></span></h2>
     <div class="sk-grid">
       {skills.map((g) => (
-        <div>
+        <div data-enter>
           <h3 class="display sk-title">{g.title[lang]}</h3>
           <ul class="chips">{g.items.map((s) => <li>{s}</li>)}</ul>
         </div>
       ))}
     </div>
-  </section>
+  </Frame>
 </Base>
 
-<script>
-  import { gsap } from '../scripts/smooth';
-  gsap.from('.head .line > span', { yPercent: 105, duration: 1.3, ease: 'expo.out', delay: 0.1 });
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    gsap.fromTo('.portrait', { clipPath: 'inset(12% 12% 12% 12%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'expo.out', delay: 0.2 });
-    document.querySelectorAll<HTMLElement>('.bio p, .tl-list li, .ph').forEach((el) => {
-      gsap.from(el, { y: 28, opacity: 0, ease: 'none', scrollTrigger: { trigger: el, start: 'top 95%', end: 'top 72%', scrub: true } });
-    });
-    document.querySelectorAll<HTMLElement>('.ph').forEach((el, i) => {
-      gsap.fromTo(el, { y: 40 * (i + 1) }, { y: -40 * (i + 1), ease: 'none', scrollTrigger: { trigger: '.photos', start: 'top bottom', end: 'bottom top', scrub: true } });
-    });
-  }
-</script>
-
 <style>
-  .head { padding-block: clamp(40px, 8vh, 96px) 40px; display: grid; gap: 12px; }
-  .head h1 { font-size: clamp(88px, 16vw, 260px); font-weight: 800; text-transform: uppercase; line-height: 0.85; }
-
-  .intro { display: grid; gap: 40px; }
-  .portrait { aspect-ratio: 1; max-width: 520px; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  /* Intro: portrait beside the name and the lead paragraph. */
+  .intro :global(.intro-in) { justify-content: safe center; gap: 4vh; padding-bottom: 5vh; }
+  .portrait { width: min(100%, 34svh); aspect-ratio: 1; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
   .portrait :global(.ink) { width: 100%; height: 100%; }
-  .bio { display: grid; gap: 20px; align-content: start; justify-items: start; max-width: 62ch; }
-  .bio p:first-child { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 2.4vw, 34px); line-height: 1.2; }
+  .intro-text { display: grid; gap: 14px; align-content: center; }
+  .intro-text h1 { font-size: clamp(88px, min(16vw, 26vh), 260px); font-weight: 800; text-transform: uppercase; line-height: 0.85; }
+  .lead { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.4vw, 34px); line-height: 1.2; max-width: 36ch; }
 
-  .timeline { display: grid; gap: clamp(56px, 9vh, 96px); padding-top: clamp(80px, 14vh, 160px); }
-  .tl-title { display: flex; align-items: baseline; gap: 0.4em; font-size: clamp(44px, 6vw, 88px); font-weight: 800; text-transform: uppercase; margin-bottom: 16px; }
-  .num { font-family: var(--mono); color: #a9a9b3; font-size: clamp(14px, 1.2vw, 18px); }
-  .tl-list { list-style: none; padding: 0; border-top: 1px solid var(--ink); }
-  .tl-list li { display: grid; gap: 4px; padding-block: 16px; border-bottom: 1px solid var(--line); }
-  .tl-what { font-family: var(--display); font-weight: 700; font-size: clamp(22px, 2.2vw, 32px); line-height: 1.1; }
-  .tl-where { color: var(--stone); }
+  .bio :global(.bio-in) { justify-content: safe center; align-items: flex-start; gap: 24px; padding-bottom: 5vh; }
+  .bio p { max-width: 62ch; font-size: clamp(15px, 1.25vw, 18px); }
+  .bio p:first-child { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.2vw, 32px); line-height: 1.25; max-width: 40ch; }
 
-  .photos { display: grid; gap: 24px; padding-top: clamp(80px, 14vh, 160px); align-items: start; }
+  /* Timeline frames */
+  .tl :global(.tl-in) { justify-content: safe center; gap: 5vh; padding-bottom: 5vh; }
+  .tl :global(.tl-title) { display: flex; align-items: baseline; gap: 0.4em; font-size: clamp(40px, min(6vw, 10vh), 88px); font-weight: 800; text-transform: uppercase; margin-bottom: 12px; }
+  .tl :global(.num) { font-family: var(--mono); color: #a9a9b3; font-size: clamp(14px, 1.2vw, 18px); }
+  .tl :global(.tl-list) { list-style: none; padding: 0; border-top: 1px solid var(--ink); }
+  .tl :global(.tl-list li) { display: grid; gap: 2px; padding-block: 12px; border-bottom: 1px solid var(--line); }
+  .tl :global(.tl-what) { font-family: var(--display); font-weight: 700; font-size: clamp(20px, 2vw, 30px); line-height: 1.1; }
+  .tl :global(.tl-where) { color: var(--stone); }
+
+  .photos { display: flex; gap: 20px; align-items: flex-start; }
   .ph { margin: 0; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
   .ph :global(img) { display: block; width: 100%; height: auto; }
-  .ph-kid { max-width: 320px; justify-self: end; background: var(--paper); padding: 10px 10px 6px; }
-  .ph-kid figcaption { padding-top: 6px; }
+  .ph-work { width: min(60%, calc(46svh * 1.5)); }
+  .ph-kid { width: min(34%, 22svh); background: var(--paper); padding: 8px 8px 4px; margin-top: 8vh; }
+  .ph-kid figcaption { padding-top: 4px; }
 
-  .skills { padding-block: clamp(80px, 14vh, 160px); }
-  .sk-grid { display: grid; gap: 36px; margin-top: 24px; }
-  .sk-title { font-size: clamp(28px, 2.6vw, 40px); font-weight: 700; text-transform: uppercase; margin-bottom: 12px; }
+  .skills :global(.skills-in) { justify-content: safe center; gap: 4vh; padding-bottom: 5vh; }
+  .sk-head { font-size: clamp(56px, min(9vw, 14vh), 140px); font-weight: 800; text-transform: uppercase; line-height: 0.9; }
+  .sk-grid { display: grid; gap: 28px; }
+  .sk-title { font-size: clamp(26px, 2.4vw, 38px); font-weight: 700; text-transform: uppercase; margin-bottom: 10px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; }
   .chips li { border: 1px solid var(--line); padding: 7px 12px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
 
+  @media (min-width: 768px) { .sk-grid { grid-template-columns: 1fr 1fr; } }
   @media (min-width: 1024px) {
-    .intro { grid-template-columns: 5fr 6fr; gap: 6vw; }
-    .tl-list li { grid-template-columns: 11em 1.3fr 1fr; align-items: baseline; gap: 24px; }
-    .timeline { grid-template-columns: 1fr; }
-    .photos { grid-template-columns: 1.4fr 1fr; }
-    .ph-kid { margin-top: 30vh; }
+    .intro :global(.intro-in) { flex-direction: row; align-items: center; gap: 6vw; }
+    .portrait { width: min(40vw, 62svh); flex: none; }
+    .tl :global(.tl-list li) { grid-template-columns: 11em 1.3fr 1fr; align-items: baseline; gap: 24px; }
+    .tl :global(.tl-two), .tl :global(.tl-photos) { flex-direction: row; align-items: center; gap: 6vw; }
+    .tl :global(.tl-two) > :global(*), .tl :global(.tl-photos) > :global(*) { flex: 1; }
+    .tl :global(.tl-two .tl-list li), .tl :global(.tl-photos .tl-list li) { grid-template-columns: 8em 1fr; }
+    .tl :global(.tl-two .tl-where), .tl :global(.tl-photos .tl-where) { grid-column: 2; }
     .sk-grid { grid-template-columns: repeat(4, 1fr); }
   }
 </style>

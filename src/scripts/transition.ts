@@ -18,13 +18,9 @@ const root = document.documentElement;
 const layer = document.querySelector<HTMLElement>('.pt')!;
 const canvas = layer.querySelector('canvas')!;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const lenis = () => (window as any).__lenis;
 
 let leaving = false;
 let frame = 0;
-let markReady!: () => void;
-/** Resolves once the page is visible (immediately when it wasn't entered through a transition). */
-export const ready = new Promise<void>((r) => (markReady = r));
 
 // ---------- Riso band: tiny 2px cells, inked where a white-noise threshold is under the row's density
 let ctx: CanvasRenderingContext2D, img: ImageData, buf: Uint32Array, thr: Uint8Array, lv: Uint16Array, w = 0, h = 0;
@@ -88,7 +84,6 @@ function hide() {
 
 async function leave(url: string) {
   leaving = true;
-  lenis()?.stop();
   try { sessionStorage.setItem(KEY, String(Date.now())); } catch {}
   build();
   draw(0);
@@ -111,19 +106,16 @@ async function arrive() {
     // The browser is crossfading onto this page already.
     hide();
     gsap.globalTimeline.resume();
-    markReady();
     return;
   }
   await Promise.race([document.fonts.ready, wait(100)]);
   layer.classList.add('on');
   root.classList.remove('pt-in');
   gsap.globalTimeline.resume();
-  markReady();
   layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out' }).finished.then(hide, () => {});
 }
 
 if (root.classList.contains('pt-in')) arrive();
-else markReady();
 
 document.addEventListener('click', (e) => {
   if (reduce || leaving || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -143,5 +135,4 @@ addEventListener('pageshow', (e) => {
   leaving = false;
   hide();
   gsap.globalTimeline.resume();
-  lenis()?.start();
 });

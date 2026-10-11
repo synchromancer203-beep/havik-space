@@ -1,5 +1,6 @@
 ---
 import SocialIcons from './SocialIcons.astro';
+import Frame from './Frame.astro';
 import { getLang, useT, href, nav } from '../i18n/utils';
 import { site } from '../i18n/ui';
 
@@ -7,8 +8,8 @@ const lang = getLang(Astro.url);
 const t = useT(lang);
 const year = new Date().getFullYear();
 ---
-<footer class="footer" id="contact" data-no-transition>
-  <div class="container">
+<Frame as="footer" class="footer" inner="footer-in" id="contact" data-no-transition="">
+  <div class="container footer-box">
     <div class="top">
       <div class="brand">
         <a href={`mailto:${site.email}`} class="mail">{site.email}<span aria-hidden="true">&nbsp;↗</span></a>
@@ -31,17 +32,18 @@ const year = new Date().getFullYear();
     </div>
   </div>
   <div class="strip" aria-hidden="true"></div>
-</footer>
+</Frame>
 
 <style>
+  /* The last frame of every page: contact on top, the wordmark filling the rest. */
   .footer {
-    position: relative; z-index: 1; margin-top: auto;
-    background:
+    --frame-bg:
       radial-gradient(50% 60% at 100% 0%, rgba(71, 55, 255, 0.04), transparent 70%),
       linear-gradient(180deg, #ffffff 0%, #f1f1f4 100%);
-    border-top: 1px solid var(--line);
   }
-  .top { display: grid; gap: 40px; padding-block: 72px 32px; }
+  .footer :global(.footer-in) { justify-content: space-between; }
+  .footer-box { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .top { display: grid; gap: 40px; padding-block: clamp(32px, 8vh, 96px) 32px; }
   .brand { display: grid; gap: 24px; justify-items: start; }
   .mail {
     font-family: var(--display); font-weight: 700;
@@ -66,11 +68,12 @@ const year = new Date().getFullYear();
   .wordmark span { color: var(--blue); }
 
   .bottom { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; padding-block: 20px 28px; }
+  .wordmark { font-size: clamp(96px, min(22vw, 40vh), 360px); }
   .bottom a:hover { color: var(--ink); }
   .strip { height: 6px; background: var(--blue); }
 
   @media (min-width: 768px) {
     .top { grid-template-columns: 2fr 1fr; }
-    .bottom { padding-bottom: 88px; }
+    .bottom { padding-bottom: 40px; }
   }
 </style>
