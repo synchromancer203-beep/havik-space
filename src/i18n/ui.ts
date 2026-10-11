@@ -5,6 +5,8 @@ export const defaultLang: Lang = 'en';
 export const site = {
   name: 'HAVIK',
   email: 'ngtrung2034work@gmail.com',
+  /** Cloudflare Web Analytics token (dashboard → Web Analytics → havik.space). Empty = no analytics. */
+  cfBeacon: '' as string,
   social: [
     { id: 'instagram', label: 'Instagram', url: 'https://www.instagram.com/synchromancer_/' },
     { id: 'facebook', label: 'Facebook', url: 'https://www.facebook.com/synchromancer/' },

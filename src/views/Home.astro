@@ -61,7 +61,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   <section class="hero" data-theme="dark">
     <div class="hero-photo">
       <div class="hero-photo-in">
-        <Ink src={hero} alt="Havik" widths={[720, 1080]} sizes="(min-width: 768px) 60vh, 100vw" loading="eager" contrast={1.7} />
+        <Ink src={hero} alt="Havik" widths={[480, 800, 1080]} sizes="(min-width: 768px) 57vh, 100vw" loading="eager" contrast={1.7} />
       </div>
     </div>
 
@@ -138,10 +138,8 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Load: portrait fades up, name rises out of its mask.
-  gsap.from('.hero-photo-in', { opacity: 0, scale: 1.05, duration: 1.8, ease: 'power2.out' });
-  gsap.from('.hero-name .line > span', { yPercent: 105, duration: 1.4, ease: 'expo.out', delay: 0.25 });
-  gsap.from('.hero-cta', { y: 16, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.9 });
+  // Load: portrait fades up, name rises out of its mask. These run as CSS animations (see the
+  // hero styles) so the name, the page's largest paint, doesn't wait for this script to load.
 
   if (!reduce) {
     // Hero recedes while the next section slides over it.
@@ -224,6 +222,14 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     color: #fff;
   }
   .hero-cta { position: absolute; right: var(--gutter); bottom: 5vh; z-index: 1; }
+
+  /* Entrance (CSS, not GSAP: it shouldn't wait for JS) */
+  .hero-photo-in { animation: hero-photo 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+  .hero-name .line > span { animation: hero-rise 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
+  .hero-cta { animation: hero-cta 0.8s cubic-bezier(0.215, 0.61, 0.355, 1) 0.9s both; }
+  @keyframes hero-photo { from { opacity: 0; transform: scale(1.05); } }
+  @keyframes hero-rise { from { transform: translateY(105%); } }
+  @keyframes hero-cta { from { opacity: 0; transform: translateY(16px); } }
 
   /* ---------- Fields ---------- */
   .fields {
