@@ -17,12 +17,6 @@ import nob from '../assets/work/nob-network.jpg';
 import open from '../assets/work/open.webp';
 import cm05 from '../assets/collage/cm-05.png';
 import cm09 from '../assets/collage/cm-09.webp';
-import cm11 from '../assets/collage/cm-11.webp';
-import cm15 from '../assets/collage/cm-15.webp';
-import mukang from '../assets/collage/mukang-02.jpg';
-import open03 from '../assets/collage/open-03.webp';
-import cmStage from '../assets/work/corrupted-moonlight.webp';
-import mare from '../assets/work/mare-crisisium.webp';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
@@ -35,29 +29,22 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Collage around the three fields, in three depths: b (back: small, blurred, faded), m (middle:
-// softly blurred) and f (front: sharp, shadowed). Back and middle photos may pass under the
-// words, which invert over them; front photos are placed clear of the words. Each depth moves at
-// its own pace when the frame scrolls in or out, and some photos run off the screen edge.
+// Collage around the three fields, in two depths: b (back, faded) may pass under the words, which
+// invert over it; f (front) is placed clear of the words. Each depth moves at its own pace when the
+// frame scrolls in or out, and some photos run off the screen edge.
 // [left %, top %, width] for desktop (d) and mobile (m), null = not on that layout. The width is in
 // vw, shrunk on screens shorter than the layout was drawn for (16:10 desktop, 390×844 phone).
-type Tile = { src: ImageMetadata; z: 'b' | 'm' | 'f'; d: number[] | null; m: number[] | null };
+type Tile = { src: ImageMetadata; z: 'b' | 'f'; d: number[] | null; m: number[] | null };
 const tiles: Tile[] = [
-  { src: cm15,      z: 'b', d: [20, 6, 10],   m: [40, 31, 28] },
-  { src: open03,    z: 'b', d: [64, 20, 11],  m: [58, 66, 30] },
-  { src: mukang,    z: 'b', d: [34, 64, 15],  m: [-4, 50, 40] },
-  { src: mare,      z: 'b', d: [93, 62, 9],   m: null },
-  { src: cm11,      z: 'b', d: [66, 88, 12],  m: [-8, 26, 22] },
-  { src: cmStage,   z: 'b', d: [-3, 70, 13],  m: null },
-  { src: cm05,      z: 'm', d: [40, 30, 8],   m: [52, 50, 20] },
-  { src: wc,        z: 'm', d: [29, 44, 9],   m: [30, 88, 22] },
-  { src: musicHero, z: 'f', d: [55, 3, 15],   m: [38, 0, 38] },
-  { src: chanDung,  z: 'f', d: [76, -4, 11],  m: [4, 2, 28] },
-  { src: liveNov,   z: 'f', d: [86, 28, 16],  m: [12, 19, 36] },
-  { src: open,      z: 'f', d: [60, 39, 15],  m: [78, 40, 32] },
-  { src: cm09,      z: 'f', d: [53, 70, 10],  m: [80, 5, 22] },
-  { src: nob,       z: 'f', d: [72, 66, 17],  m: [4, 70, 42] },
-  { src: musicLive, z: 'f', d: [8, 88, 15],   m: [50, 76, 44] },
+  { src: open,      z: 'b', d: [24, 3, 14],   m: [34, 40, 46] },
+  { src: cm05,      z: 'b', d: [40, 27, 9],   m: null },
+  { src: wc,        z: 'b', d: [30, 46, 10],  m: null },
+  { src: musicHero, z: 'f', d: [56, 4, 16],   m: [38, 0, 38] },
+  { src: chanDung,  z: 'f', d: [78, -3, 12],  m: [4, 2, 28] },
+  { src: liveNov,   z: 'f', d: [84, 30, 17],  m: [12, 17, 34] },
+  { src: cm09,      z: 'f', d: [58, 38, 11],  m: [80, 5, 22] },
+  { src: nob,       z: 'f', d: [72, 62, 18],  m: [4, 70, 42] },
+  { src: musicLive, z: 'f', d: [10, 88, 15],  m: [50, 76, 44] },
 ];
 const pos = (k: 'd' | 'm', v: number[] | null) => (v ? `--${k}x:${v[0]}%;--${k}y:${v[1]}%;--${k}w:${v[2]};` : '');
 
@@ -101,7 +88,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
           data-depth
           style={`${pos('d', tl.d)}${pos('m', tl.m)}--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
         >
-          <div class="tile-in"><Image src={tl.src} alt="" widths={tl.z === 'f' ? [400, 720] : [320]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
+          <div class="tile-in"><Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
         </div>
       ))}
     </div>
@@ -207,20 +194,13 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   }
   html:global(.paged) .collage .tile { translate: 0 calc(var(--fy, 0) * var(--z) * 1svh); }
   .tile--f { box-shadow: 0 24px 48px -20px rgba(32, 32, 48, 0.45); }
-  /* Fades go on the inner box: the entrance animates the tile's own opacity. */
-  .tile--m { --z: 0.14; }
-  .tile--m .tile-in { opacity: 0.9; }
-  .tile--b { --z: 0.05; }
-  .tile--b .tile-in { opacity: 0.7; }
+  /* The fade goes on the inner box: the entrance animates the tile's own opacity. */
+  .tile--b { --z: 0.06; }
+  .tile--b .tile-in { opacity: 0.4; animation-duration: 13s; }
   .no-d { display: none; }
-  /* A slow drift keeps the collage alive while it is on screen; the back drifts least. */
+  /* A slow drift keeps the collage alive while it is on screen; the back drifts slower. */
   .tile-in { height: 100%; overflow: hidden; will-change: transform; animation: drift 9s ease-in-out calc(var(--i) * -1.3s) infinite alternate; }
-  .tile--m .tile-in { animation-duration: 12s; }
-  .tile--b .tile-in { animation-duration: 15s; }
   .tile-in :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
-  /* The blur sits on the image, inside the drifting box, so it is drawn once and only moved. */
-  .tile--m :global(img) { filter: blur(1.5px) saturate(0.9); }
-  .tile--b :global(img) { filter: blur(5px) saturate(0.7); transform: scale(1.06); }
   @keyframes drift { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
 
   /* The two copies of the words share one grid cell. Under: paper-coloured, below the photos.
