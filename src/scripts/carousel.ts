@@ -80,7 +80,8 @@ class Carousel {
       const gap = parseFloat(getComputedStyle(r).columnGap) || 0;
       return kids.reduce((s, k) => s + k.offsetWidth + gap, 0);
     });
-    this.loop = W > 0 && Math.max(...this.lens) - 1 > W;
+    // A conveyor always runs, repeating its items if they don't fill the track on their own.
+    this.loop = W > 0 && (Math.max(...this.lens) - 1 > W || this.auto > 0);
     this.track.classList.toggle('is-loop', this.loop);
     if (this.loop) {
       this.rows.forEach((r, k) => {
