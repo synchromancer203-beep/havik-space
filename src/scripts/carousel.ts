@@ -3,10 +3,16 @@
 // the mouse, swipe sideways on touch, or scroll sideways (trackpad, Shift + wheel) to move it;
 // a release keeps some momentum. Vertical gestures are left to the frames (scripts/frames.ts).
 // If everything already fits, the rows just sit centred and nothing moves.
+// A track can fix its row count (data-rows) and drift on its own like a conveyor (data-auto, px
+// per frame); the drift pauses under the mouse, while dragging and for a moment after a gesture.
+// It can also have a focal point (data-focus / data-focus-m on phones: a fraction of the track's
+// width): the item passing it grows by data-zoom / data-zoom-m, easing in and out as it moves.
+// What grows is the item's [data-zoom-target] (its cover), from its bottom edge.
 
 const mobile = matchMedia('(max-width: 767px)');
 const rowsFor = (n: number) => (mobile.matches ? (n < 10 ? 2 : 3) : n < 5 ? 1 : n <= 12 ? 2 : 3);
 const mod = (a: number, n: number) => ((a % n) + n) % n;
+const still = matchMedia('(prefers-reduced-motion: reduce)');
 
 class Carousel {
   track: HTMLElement;
@@ -19,18 +25,42 @@ class Carousel {
   raf = 0;
   /** Set while a drag is moving, so the click that ends it doesn't open the viewer. */
   dragged = false;
+  /** Conveyor drift, px per frame (0 = off), and what holds it: a pointer over or on the track,
+   *  or a recent gesture. */
+  auto: number;
+  held = false;
+  rest = 0;
+  /** Focal point (px from the track's left) and how much the item there grows; per row, every
+   *  item's centre at rest and its width plus the gap, and the element that grows. */
+  fx = 0;
+  zoom = 0;
+  spots: { c: number; w: number; bw: number; it: HTMLElement; el: HTMLElement; s: number; z: string; dx: number }[][] = [];
 
   constructor(track: HTMLElement) {
     this.track = track;
     this.items = [...track.querySelectorAll<HTMLElement>('.g-thumb')];
+    this.auto = still.matches ? 0 : Number(track.dataset.auto) || 0;
     this.bind();
+    if (this.auto) this.drift();
   }
+
+  drift() {
+    const step = (t: number) => {
+      const shown = this.track.closest('.frame')?.classList.contains('is-current') ?? true;
+      if (this.loop && shown && !this.held && t > this.rest) this.move(this.auto);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  /** Hold the drift for a moment after a gesture. */
+  pause() { this.rest = performance.now() + 1800; }
 
   /** Spread the images over the rows (each to the currently shortest row, so rows end level),
    *  then repeat each row's run until it covers the track plus one more run. */
   build() {
     const n = this.items.length;
-    const R = Math.min(rowsFor(n), n);
+    const R = Math.min(Number(this.track.dataset.rows) || rowsFor(n), n);
     const sums = new Array(R).fill(0);
     this.rows = Array.from({ length: R }, () => {
       const r = document.createElement('div');
@@ -50,7 +80,8 @@ class Carousel {
       const gap = parseFloat(getComputedStyle(r).columnGap) || 0;
       return kids.reduce((s, k) => s + k.offsetWidth + gap, 0);
     });
-    this.loop = W > 0 && Math.max(...this.lens) - 1 > W;
+    // A conveyor always runs, repeating its items if they don't fill the track on their own.
+    this.loop = W > 0 && (Math.max(...this.lens) - 1 > W || this.auto > 0);
     this.track.classList.toggle('is-loop', this.loop);
     if (this.loop) {
       this.rows.forEach((r, k) => {
@@ -66,12 +97,61 @@ class Carousel {
         }
       });
     }
+    this.measure();
     this.render();
+  }
+
+  /** Where each item sits at rest, for the focal zoom. */
+  measure() {
+    const d = this.track.dataset;
+    const f = Number((mobile.matches && d.focusM) || d.focus) || 0;
+    this.zoom = f ? Number((mobile.matches && d.zoomM) || d.zoom) || 0 : 0;
+    if (!this.zoom) { this.spots = []; return; }
+    const tr = this.track.getBoundingClientRect();
+    this.fx = tr.width * f;
+    this.spots = this.rows.map((r) => {
+      const gap = parseFloat(getComputedStyle(r).columnGap) || 0;
+      return ([...r.children] as HTMLElement[]).map((it) => {
+        const b = it.getBoundingClientRect();
+        const el = it.querySelector<HTMLElement>('[data-zoom-target]') ?? it;
+        el.style.transform = ''; // clones copy the original's inline zoom
+        el.style.zIndex = '';
+        it.style.translate = '';
+        return { c: b.left - tr.left + b.width / 2, w: b.width + gap, bw: b.width, it, el, s: 1, z: '', dx: 0 };
+      });
+    });
   }
 
   render() {
     this.rows.forEach((r, k) => {
-      r.style.transform = this.loop ? `translate3d(${-mod(this.x, this.lens[k])}px,0,0)` : '';
+      const shift = this.loop ? mod(this.x, this.lens[k]) : 0;
+      r.style.transform = this.loop ? `translate3d(${-shift}px,0,0)` : '';
+      // Focal zoom: full at the focal point, easing (cosine) to none one item away. The items
+      // around it move apart by what it gains, so every gap stays the same.
+      const sp = this.spots[k];
+      if (!sp?.length) return;
+      let extra = 0;
+      sp.forEach((p) => {
+        const dist = Math.abs(p.c - shift - this.fx) / p.w;
+        p.s = 1 + (dist < 1 ? this.zoom * (1 + Math.cos(Math.PI * dist)) / 2 : 0);
+        extra += (p.s - 1) * p.bw;
+      });
+      let before = 0;
+      sp.forEach((p) => {
+        const grow = (p.s - 1) * p.bw;
+        const dx = before + grow / 2 - extra / 2;
+        before += grow;
+        const z = p.s > 1 ? `scale(${p.s.toFixed(4)})` : '';
+        if (p.z !== z) {
+          p.z = z;
+          p.el.style.transform = z;
+          p.el.style.zIndex = p.s > 1.005 ? '1' : '';
+        }
+        if (Math.abs(dx - p.dx) > 0.05) {
+          p.dx = dx;
+          p.it.style.translate = dx ? `${dx.toFixed(2)}px 0` : '';
+        }
+      });
     });
   }
 
@@ -102,6 +182,8 @@ class Carousel {
     let lt = 0;
     let axis: '' | 'x' | 'y' = '';
 
+    t.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.held = true; });
+    t.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') this.held = false; });
     t.addEventListener('pointerdown', (e) => {
       if (!this.loop || (e.pointerType === 'mouse' && e.button !== 0)) return;
       cancelAnimationFrame(this.raf);
@@ -131,11 +213,13 @@ class Carousel {
       lx = e.clientX;
       lt = e.timeStamp;
       this.move(dx);
+      this.pause();
     });
     const end = (e: PointerEvent) => {
       if (e.pointerId !== id) return;
       id = -1;
       t.classList.remove('is-dragging');
+      this.pause();
       if (axis === 'x' && e.timeStamp - lt < 80) this.glide();
     };
     t.addEventListener('pointerup', end);
@@ -154,6 +238,7 @@ class Carousel {
       e.preventDefault();
       e.stopPropagation();
       cancelAnimationFrame(this.raf);
+      this.pause();
       this.move(dx);
     }, { passive: false });
 

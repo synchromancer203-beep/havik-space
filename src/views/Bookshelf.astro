@@ -1,0 +1,82 @@
+---
+// /bookshelf: books the owner has read and recommends. One frame: the title, then every cover on a
+// single endless conveyor (scripts/carousel.ts) that drifts on its own and can be dragged or
+// swiped; title, author and year sit under each cover. The cover passing a focal point grows
+// (desktop: +20%, three quarters across; phones: +10% just left of centre).
+// Books: src/content/books/<slug>.md.
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Frame from '../components/Frame.astro';
+import { getLang, useT } from '../i18n/utils';
+
+const lang = getLang(Astro.url);
+const t = useT(lang);
+const vi = lang === 'vi';
+
+const books = (await getCollection('books')).sort(
+  (a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title),
+);
+---
+<Base title={t('nav.books')}>
+  <Frame class="bs" inner="bs-in">
+    <div class="container">
+      <h1 class="display bs-title" data-enter="rise"><span class="line"><span>{vi ? 'Tủ sách.' : 'Bookshelf.'}</span></span></h1>
+    </div>
+    {books.length > 0 && (
+      <div class="g-track" data-rows="1" data-auto="0.35" data-focus="0.745" data-zoom="0.2" data-focus-m="0.436" data-zoom-m="0.1" data-enter data-depth>
+        {books.map((b) => {
+          const a = (b.data.cover.width / b.data.cover.height).toFixed(4);
+          return (
+            <figure class="g-thumb book" data-a={a} style={`--a:${a}`}>
+              <div class="book-cover" data-zoom-target>
+                <Image src={b.data.cover} alt={`${b.data.title}, ${b.data.author}`} widths={[320, 560]} sizes="(min-width: 768px) 20vw, 50vw" draggable="false" />
+              </div>
+              <figcaption>
+                <span class="display b-title">{b.data.title}</span>
+                <span class="b-meta">{b.data.author}</span>
+                <span class="b-meta">{b.data.year}</span>
+              </figcaption>
+            </figure>
+          );
+        })}
+      </div>
+    )}
+  </Frame>
+</Base>
+
+<script>
+  import { layout } from '../scripts/carousel';
+  layout();
+</script>
+
+<style>
+  .bs :global(.bs-in) { padding-top: calc(var(--header-h) + 3vh); padding-bottom: 5vh; justify-content: safe center; gap: 5vh; }
+  .bs-title { font-size: clamp(56px, min(10vw, 16vh), 180px); font-weight: 800; }
+
+  /* One row of covers, all the same height, each at its own proportions. */
+  .g-track {
+    --cover-h: min(40svh, 26vw);
+    display: flex; overflow: clip;
+    padding-top: calc(var(--cover-h) * 0.21); /* room for the focal cover to grow upward */
+    user-select: none; -webkit-user-select: none;
+  }
+  .g-track:global(.is-loop) { cursor: grab; touch-action: none; }
+  .g-track:global(.is-dragging) { cursor: grabbing; }
+  .g-track :global(.g-row) { flex: 1; display: flex; gap: clamp(16px, 2.4vw, 40px); justify-content: center; will-change: transform; }
+  .g-track:global(.is-loop) :global(.g-row) { justify-content: flex-start; }
+  .book { flex: none; width: calc(var(--cover-h) * var(--a)); margin: 0; display: grid; gap: 14px; align-content: start; }
+  .book-cover { position: relative; aspect-ratio: var(--a); background: #e2e2e8; box-shadow: 0 18px 36px -18px rgba(32, 32, 48, 0.5); transform-origin: 50% 100%; will-change: transform; }
+  .book-cover :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
+  figcaption { display: grid; gap: 4px; }
+  .b-title {
+    font-size: clamp(17px, 1.4vw, 22px); font-weight: 700; line-height: 1.1;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .b-meta { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--stone); }
+
+  @media (max-width: 767px) {
+    .bs-title { font-size: clamp(48px, 14vw, 72px); }
+    .g-track { --cover-h: min(34svh, 54vw); padding-top: calc(var(--cover-h) * 0.11); }
+  }
+</style>

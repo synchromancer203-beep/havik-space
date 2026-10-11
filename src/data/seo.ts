@@ -54,6 +54,13 @@ export const seo: Record<string, PageSeo> = {
       vi: 'Founder & CEO của NÓB Network, Co-founder & COO của iMind Việt Nam, người sáng lập Corrupted Moonlight. Tiểu sử, kinh nghiệm, học vấn và kỹ năng.',
     },
   },
+  '/bookshelf': {
+    label: { en: 'Bookshelf', vi: 'Tủ sách' },
+    description: {
+      en: 'Books Havik has read and recommends.',
+      vi: 'Những cuốn sách Havik đã đọc và giới thiệu.',
+    },
+  },
   '/media': {
     label: { en: 'Work', vi: 'Tác phẩm' },
     description: {
