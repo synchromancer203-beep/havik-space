@@ -1,16 +1,19 @@
-// Page transitions (~0.8s). On an internal link click a paper layer fades in over the page and a
-// band of fine Vivid Blue riso grain sweeps down across it from the top edge to the bottom. Only once
-// the band has left (plain paper, nothing moving, so load time doesn't read as a stall) does the
-// browser navigate. The next page is flagged (sessionStorage, read by the inline script in Base's
-// <head>) so it paints under the same paper layer, which then fades away. That fade is a
-// compositor opacity animation, so it stays smooth while the new page is still busy starting up.
-// GSAP's global timeline is held until the fade starts, so each page's entrance plays as it is
-// revealed. Cross-document View Transitions (global.css) keep the frame between documents.
+// Page transitions. On an internal link click a paper layer fades in over the page and a band of
+// fine Vivid Blue riso grain sweeps down across it from the top edge to the bottom. Navigation
+// starts as the band's core nears the bottom; the old page stays on screen (and keeps animating)
+// until the next one is ready, so the sweep never stalls on load time.
+// - With cross-document View Transitions (Chromium, Safari), the browser crossfades from the old
+//   page's current frame straight onto the new page (global.css; the inline script in Base's
+//   <head> drops the paper layer on pagereveal).
+// - Otherwise the next page is flagged (sessionStorage, read by that inline script) so it paints
+//   under the paper layer, which then fades away with a compositor opacity animation.
+// GSAP's global timeline is held until then, so each page's entrance plays as it is revealed.
 import { gsap } from './smooth';
 
 const KEY = 'pt';
 const BLUE = 0xffff3747; // #4737FF as little-endian ABGR
 const BAND = 0.9; // band height, share of the viewport
+const NAV_AT = 0.7; // sweep position to start navigating at: the band's dense core is near the bottom
 const root = document.documentElement;
 const layer = document.querySelector<HTMLElement>('.pt')!;
 const canvas = layer.querySelector('canvas')!;
@@ -92,19 +95,31 @@ async function leave(url: string) {
   layer.classList.add('on');
   layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out', fill: 'forwards' });
   await wait(80);
-  await play(400, (t) => draw(easeInOut(t)));
-  location.assign(url);
+  let going = false;
+  await play(400, (t) => {
+    const pos = easeInOut(t);
+    draw(pos);
+    if (!going && pos >= NAV_AT) { going = true; location.assign(url); }
+  });
 }
 
 async function arrive() {
   gsap.globalTimeline.pause();
-  await Promise.race([document.fonts.ready, wait(400)]);
-  await new Promise(requestAnimationFrame);
+  const w = window as any;
+  if ('onpagereveal' in window && !w.__ptReveal) await new Promise((r) => addEventListener('pt:reveal', r, { once: true }));
+  if (w.__ptReveal === 'vt') {
+    // The browser is crossfading onto this page already.
+    hide();
+    gsap.globalTimeline.resume();
+    markReady();
+    return;
+  }
+  await Promise.race([document.fonts.ready, wait(100)]);
   layer.classList.add('on');
   root.classList.remove('pt-in');
   gsap.globalTimeline.resume();
   markReady();
-  layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in-out' }).finished.then(hide, () => {});
+  layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out' }).finished.then(hide, () => {});
 }
 
 if (root.classList.contains('pt-in')) arrive();

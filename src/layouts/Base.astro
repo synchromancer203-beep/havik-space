@@ -39,12 +39,19 @@ const canonical = new URL(Astro.url.pathname, origin).href;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#ffffff" />
     <script is:inline>
-      // Arrived through a page transition: paint under the paper layer (see scripts/transition.ts).
+      // Arrived through a page transition: paint under the paper layer (see scripts/transition.ts),
+      // unless the browser runs a cross-document view transition, which crossfades from the old
+      // page's last frame straight to this one. pagereveal fires just before the first render.
       try {
         var pt = +sessionStorage.getItem('pt');
         sessionStorage.removeItem('pt');
         if (Date.now() - pt < 5000 && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('pt-in');
       } catch (e) {}
+      addEventListener('pagereveal', function (e) {
+        window.__ptReveal = e.viewTransition ? 'vt' : 'plain';
+        if (e.viewTransition) document.documentElement.classList.remove('pt-in');
+        dispatchEvent(new Event('pt:reveal'));
+      }, { once: true });
     </script>
     <script>import '../scripts/transition';</script>
   </head>
