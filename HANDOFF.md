@@ -5,7 +5,7 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 ## Stack & deploy
 - Astro 5 static, Lenis + GSAP ScrollTrigger, fonts Big Shoulders Display (titles, bold 700–800) + JetBrains Mono.
 - Repo `synchromancer203-beep/havik-space`, push to `main` → GitHub Actions → Pages → https://havik.space (DNS at Spaceship, HTTPS on).
-- Bilingual: VN at `/`, EN at `/en/`. UI strings `src/i18n/ui.ts`, helpers `src/i18n/utils.ts`.
+- Bilingual: EN (default) at `/`, VN at `/vi/` (owner switched the default to EN; old `/en/...` URLs redirect via `redirects` in `astro.config.mjs`). UI strings `src/i18n/ui.ts`, helpers `src/i18n/utils.ts`.
 - Pages are thin wrappers in `src/pages/**` → views in `src/views/*`.
 
 ## Content

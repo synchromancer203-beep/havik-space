@@ -2,7 +2,7 @@ import { ui, defaultLang, type Lang, type UIKey } from './ui';
 
 export function getLang(url: URL): Lang {
   const [, first] = url.pathname.split('/');
-  return first === 'en' ? 'en' : defaultLang;
+  return first === 'vi' ? 'vi' : defaultLang;
 }
 
 export function useT(lang: Lang) {
@@ -22,7 +22,7 @@ export function href(lang: Lang, path: string) {
 
 /** Strip the language prefix, returning the neutral path. */
 export function neutralPath(pathname: string) {
-  const stripped = pathname.replace(/^\/en(?=\/|$)/, '');
+  const stripped = pathname.replace(/^\/vi(?=\/|$)/, '');
   return stripped === '' ? '/' : stripped;
 }
 

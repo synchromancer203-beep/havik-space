@@ -12,11 +12,11 @@ const t = useT(lang);
         <p class="meta">ERR_404 · SIGNAL LOST</p>
         <h1 class="display">404<span>//</span><br />Signal lost</h1>
         {/* GitHub Pages serves one 404.html for every language, so it carries both. */}
-        <p lang="vi">{useT('vi')('404.text')}</p>
-        <p lang="en" class="meta">{useT('en')('404.text')}</p>
+        <p lang="en">{useT('en')('404.text')}</p>
+        <p lang="vi" class="meta">{useT('vi')('404.text')}</p>
         <div class="actions">
-          <a href={href('vi', '/')} class="btn btn--blue">← {useT('vi')('btn.home')}</a>
-          <a href={href('en', '/')} class="btn" lang="en">← {useT('en')('btn.home')}</a>
+          <a href={href('en', '/')} class="btn btn--blue">← {useT('en')('btn.home')}</a>
+          <a href={href('vi', '/')} class="btn" lang="vi">← {useT('vi')('btn.home')}</a>
           <a href={href(lang, '/media')} class="btn">{t('btn.viewWork')} ↗</a>
         </div>
       </div>

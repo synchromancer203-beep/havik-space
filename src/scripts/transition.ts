@@ -1,5 +1,5 @@
 // Page transitions (~0.8s). On an internal link click a paper layer fades in over the page and a
-// band of fine Vivid Blue riso grain sweeps across it from the bottom edge to the top. Only once
+// band of fine Vivid Blue riso grain sweeps down across it from the top edge to the bottom. Only once
 // the band has left (plain paper, nothing moving, so load time doesn't read as a stall) does the
 // browser navigate. The next page is flagged (sessionStorage, read by the inline script in Base's
 // <head>) so it paints under the same paper layer, which then fades away. That fade is a
@@ -40,15 +40,15 @@ function build() {
   for (let i = 0; i < thr.length; i += 65536) crypto.getRandomValues(thr.subarray(i, i + 65536)); // 64KB cap per call
 }
 
-/** u: 0 at the band's top (leading) edge, 1 at its bottom edge. Sparse lead, dense core, short tail. */
+/** u: 0 at the band's leading edge, 1 at its trailing edge. Sparse lead, dense core, short tail. */
 const density = (u: number) =>
   u <= 0 || u >= 1 ? 0 : u < 0.8 ? (u / 0.8) ** 1.8 : 1 - ((u - 0.8) / 0.2) ** 0.7;
 
-/** pos: 0 = band just below the screen, 1 = gone off the top. */
+/** pos: 0 = band just above the screen, 1 = gone off the bottom. Moving down, it leads with its lower edge. */
 function draw(pos: number) {
-  const top = (1 - pos * (1 + BAND)) * h;
+  const lead = (pos * (1 + BAND)) * h; // leading edge, in rows from the top
   const bh = BAND * h;
-  for (let y = 0; y < h; y++) lv[y] = density((y - top) / bh) * 256;
+  for (let y = 0; y < h; y++) lv[y] = density((lead - y) / bh) * 256;
   for (let y = 0, i = 0; y < h; y++) {
     const l = lv[y];
     if (!l) { buf.fill(0, i, i + w); i += w; continue; }
