@@ -2,7 +2,7 @@
 // /bookshelf: books the owner has read and recommends. One frame: the title, then every cover on a
 // single endless conveyor (scripts/carousel.ts) that drifts on its own and can be dragged or
 // swiped; title, author and year sit under each cover. The cover passing a focal point grows
-// (desktop: +20% at the spot of the 5th cover; phones: +10% just left of centre).
+// (desktop: +20%, three quarters across; phones: +10% just left of centre).
 // Books: src/content/books/<slug>.md.
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
@@ -24,7 +24,7 @@ const books = (await getCollection('books')).sort(
       <h1 class="display bs-title" data-enter="rise"><span class="line"><span>{vi ? 'Tủ sách.' : 'Bookshelf.'}</span></span></h1>
     </div>
     {books.length > 0 && (
-      <div class="g-track" data-rows="1" data-auto="0.35" data-focus="0.833" data-zoom="0.2" data-focus-m="0.436" data-zoom-m="0.1" data-enter data-depth>
+      <div class="g-track" data-rows="1" data-auto="0.35" data-focus="0.745" data-zoom="0.2" data-focus-m="0.436" data-zoom-m="0.1" data-enter data-depth>
         {books.map((b) => {
           const a = (b.data.cover.width / b.data.cover.height).toFixed(4);
           return (
