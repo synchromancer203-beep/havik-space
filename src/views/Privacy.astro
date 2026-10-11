@@ -13,12 +13,14 @@ const t = useT(lang);
     {lang === 'vi' ? (
       <div class="body">
         <p>Trang này không có form, không dùng cookie theo dõi và không thu thập dữ liệu cá nhân của bạn.</p>
+        {site.cfBeacon && <p>Lượt xem trang được đếm ẩn danh bằng Cloudflare Web Analytics: không cookie, không lưu địa chỉ IP hay dấu vết cá nhân.</p>}
         <p>Khi bạn bấm vào link mạng xã hội hoặc trình phát nhạc nhúng (Spotify, Bandcamp), các dịch vụ đó áp dụng chính sách riêng của họ.</p>
         <p>Thắc mắc: <a href={`mailto:${site.email}`}>{site.email}</a></p>
       </div>
     ) : (
       <div class="body">
         <p>This site has no forms, uses no tracking cookies and collects no personal data.</p>
+        {site.cfBeacon && <p>Page views are counted anonymously with Cloudflare Web Analytics: no cookies, no IP addresses or personal fingerprints stored.</p>}
         <p>Social links and embedded players (Spotify, Bandcamp) are covered by those services' own policies.</p>
         <p>Questions: <a href={`mailto:${site.email}`}>{site.email}</a></p>
       </div>
