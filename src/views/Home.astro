@@ -10,15 +10,11 @@ import liveNov from '../assets/personal/live-novation.jpg';
 import musicHero from '../assets/personal/music-hero.jpg';
 import musicLive from '../assets/personal/music-live.jpg';
 import hero from '../assets/home/hero-portrait.jpg';
-import cm from '../assets/work/corrupted-moonlight.webp';
-import bh from '../assets/work/beach-heaven.webp';
 import wc from '../assets/work/warcross.webp';
 import nob from '../assets/work/nob-network.jpg';
 import open from '../assets/work/open.webp';
 import cm05 from '../assets/collage/cm-05.png';
 import cm09 from '../assets/collage/cm-09.webp';
-import cm13 from '../assets/collage/cm-13.webp';
-import mk02 from '../assets/collage/mukang-02.jpg';
 import { getLang, useT, href } from '../i18n/utils';
 
 const lang = getLang(Astro.url);
@@ -31,22 +27,19 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Collage behind the three fields: 12 photos, each shown once, hand-placed with breathing
+// Collage behind the three fields: 9 photos, each shown once, hand-placed with breathing
 // room. One layer drifts up at roughly scroll speed while the stage is pinned.
 // [left %, top vw, width vw] — all in width units so gaps hold at any screen ratio.
 const tiles = [
-  { src: chanDung,  d: [5, 2, 17],   m: [4, 0, 38] },
-  { src: musicHero, d: [32, 6, 21],  m: [54, 8, 42] },
-  { src: cm09,      d: [64, 0, 13],  m: [10, 46, 30] },
-  { src: open,      d: [81, 8, 16],  m: [52, 47, 44] },
-  { src: liveNov,   d: [12, 26, 21], m: [52, 84, 42] },
-  { src: cm05,      d: [40, 27, 13], m: [4, 94, 34] },
-  { src: nob,       d: [58, 24, 19], m: [46, 117, 46] },
-  { src: wc,        d: [83, 25, 12], m: [6, 136, 32] },
-  { src: musicLive, d: [3, 46, 22],  m: [48, 156, 46] },
-  { src: mk02,      d: [30, 44, 18], m: [4, 185, 42] },
-  { src: cm,        d: [54, 47, 20], m: [52, 190, 42] },
-  { src: cm13,      d: [82, 45, 12], m: [24, 222, 30] },
+  { src: chanDung,  d: [4, 2, 17],   m: [4, 0, 38] },
+  { src: musicHero, d: [30, 6, 20],  m: [54, 10, 42] },
+  { src: cm09,      d: [59, 0, 12],  m: [10, 48, 30] },
+  { src: open,      d: [80, 8, 16],  m: [52, 51, 44] },
+  { src: liveNov,   d: [10, 28, 21], m: [52, 90, 42] },
+  { src: cm05,      d: [42, 30, 13], m: [4, 98, 34] },
+  { src: nob,       d: [66, 27, 19], m: [46, 125, 46] },
+  { src: wc,        d: [22, 50, 12], m: [6, 142, 32] },
+  { src: musicLive, d: [52, 52, 22], m: [48, 165, 46] },
 ];
 
 // Featured work comes from the content collection (featured: true), in the order music → visual → marketing.
@@ -166,7 +159,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
 
     // While the stage is pinned, the collage layer rises from below to above the frame at
     // about scroll speed, so each photo passes through exactly once.
-    gsap.fromTo('.collage', { y: () => innerHeight * 0.4 }, {
+    gsap.fromTo('.collage', { y: () => innerHeight * 0.12 }, {
       y: () => -(document.querySelector<HTMLElement>('.collage')!.offsetHeight - innerHeight * 0.2),
       ease: 'none',
       scrollTrigger: { trigger: '.fields', start: 'top top', end: 'bottom bottom', scrub: true, invalidateOnRefresh: true },
@@ -246,14 +239,15 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   /* The stage carries its own background so the blended words have something to invert against. */
   .f-stage {
     position: sticky; top: 0; height: 100svh; overflow: hidden;
-    display: grid; align-items: center;
+    display: grid; align-items: start;
+    padding-top: calc(var(--header-h) + 6vh);
     background: var(--fields-bg);
     isolation: isolate;
   }
 
   .collage {
     position: absolute; left: 0; right: 0; top: 0;
-    height: 62vw;
+    height: 66vw;
     will-change: transform;
   }
   .tile {
@@ -328,7 +322,7 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
     .hero-cta { left: var(--gutter); right: auto; }
-    .collage { height: 264vw; }
+    .collage { height: 194vw; }
     .tile { left: var(--mx); top: var(--my); width: var(--mw); }
     .hero-cta { bottom: calc(6vh + 22vw + 16px); }
   }
