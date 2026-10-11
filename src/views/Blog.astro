@@ -1,0 +1,48 @@
+---
+// /blog: the posts, newest first, in one frame (it scrolls inside once there are many).
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Frame from '../components/Frame.astro';
+import { getLang, useT, href } from '../i18n/utils';
+import { postsIn, slugOf, formatDate } from '../lib/posts';
+
+const lang = getLang(Astro.url);
+const t = useT(lang);
+const posts = await postsIn(lang);
+---
+<Base title={t('nav.blog')}>
+  <Frame class="bl" inner="container bl-in">
+    <h1 class="display bl-title" data-enter="rise"><span class="line"><span>Blog.</span></span></h1>
+    <ol class="bl-list">
+      {posts.map((p) => (
+        <li data-enter>
+          <a href={href(lang, `/blog/${slugOf(p)}`)} class="bl-item">
+            <div class="bl-thumb"><Image src={p.data.cover} alt="" widths={[240, 480]} sizes="(min-width: 768px) 240px, 34vw" /></div>
+            <div class="bl-text">
+              <span class="meta">{formatDate(p.data.date, lang)}</span>
+              <span class="display bl-name">{p.data.title}</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </Frame>
+</Base>
+
+<style>
+  .bl :global(.bl-in) { padding-top: calc(var(--header-h) + 3vh); padding-bottom: 5vh; justify-content: safe center; gap: 4vh; }
+  .bl-title { font-size: clamp(56px, min(10vw, 16vh), 180px); font-weight: 800; }
+  .bl-list { list-style: none; padding: 0; border-top: 1px solid var(--ink); }
+  .bl-list li { border-bottom: 1px solid var(--line); }
+  .bl-item { display: grid; grid-template-columns: clamp(110px, 18vw, 240px) 1fr; gap: clamp(16px, 3vw, 40px); align-items: center; padding-block: 20px; }
+  .bl-thumb { aspect-ratio: 4 / 3; overflow: hidden; background: #e2e2e8; }
+  .bl-thumb :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease-out); }
+  .bl-text { display: grid; gap: 10px; }
+  .bl-name { font-size: clamp(26px, 3.4vw, 56px); font-weight: 700; line-height: 1.05; }
+  .bl-item:hover .bl-name { color: var(--blue); }
+  .bl-item:hover .bl-thumb :global(img) { transform: scale(1.03); }
+
+  @media (max-width: 767px) {
+    .bl-title { font-size: clamp(48px, 14vw, 72px); }
+  }
+</style>

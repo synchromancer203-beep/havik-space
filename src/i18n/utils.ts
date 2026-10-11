@@ -52,9 +52,9 @@ export const nav: NavItem[] = [
       { key: 'media.music', path: '/media?tab=music' },
       { key: 'media.visual', path: '/media?tab=visual' },
       { key: 'media.marketing', path: '/media?tab=marketing' },
-      // Blog hidden until the first post exists.
     ],
   },
+  { key: 'nav.blog', path: '/blog' },
   { key: 'nav.books', path: '/bookshelf' },
   { key: 'nav.contact', path: '#contact' },
 ];

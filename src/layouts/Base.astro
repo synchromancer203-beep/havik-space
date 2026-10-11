@@ -13,17 +13,19 @@ interface Props {
   description?: string;
   /** Keep the page out of search results (404). */
   noindex?: boolean;
+  /** Share image (root-relative URL) instead of the page's generated OG card, e.g. a post's cover. */
+  image?: string;
 }
 
 const lang = getLang(Astro.url);
 const t = useT(lang);
 const path = neutralPath(Astro.url.pathname).replace(/(.)\/$/, '$1');
 const page = seo[path];
-const { title, description = page?.description[lang] ?? t('meta.description'), noindex = false } = Astro.props;
+const { title, description = page?.description[lang] ?? t('meta.description'), noindex = false, image } = Astro.props;
 const fullTitle = title ? `${title} | Havik` : 'Havik';
 const origin = Astro.site!.origin;
 const canonical = new URL(Astro.url.pathname, origin).href;
-const ogImage = new URL(`/og/${lang}/${ogSlug(page ? path : '/')}.png`, origin).href;
+const ogImage = new URL(image ?? `/og/${lang}/${ogSlug(page ? path : '/')}.png`, origin).href;
 const locale = (l: Lang) => (l === 'vi' ? 'vi_VN' : 'en_US');
 // Structured data for the home page: who the site is about and where else they are.
 const person = path === '/' && {
