@@ -204,8 +204,10 @@ const isActive = (path: string) => {
   .mobile details a { display: block; padding: 8px 0; text-transform: uppercase; font-size: 14px; letter-spacing: 0.04em; }
 
   @media (min-width: 640px) { .cta { display: inline-flex; } }
-  /* 1024–1279: the six menu items leave no room for it; "Contact" in the menu goes to the same place. */
+  /* 1024–1279: the menu items leave no room for it; "Contact" in the menu goes to the same place. */
   @media (min-width: 1024px) and (max-width: 1279px) { .cta { display: none; } }
+  /* 1024–1279: seven items only fit with tighter cells. */
+  @media (max-width: 1279px) { .item > a { padding: 0 8px; font-size: 12px; letter-spacing: 0.03em; } }
   @media (min-width: 1024px) {
     .desktop { display: block; }
     .burger { display: none; }

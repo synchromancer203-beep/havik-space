@@ -1,0 +1,62 @@
+---
+// /blog/<slug>: one post as frames. Head: date, title and the cover. Body: the text in a reading
+// column (it scrolls inside its frame), then a link back to the list. Footer last.
+import { Image, getImage } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Frame from '../components/Frame.astro';
+import { getLang, href } from '../i18n/utils';
+import { formatDate, type Post } from '../lib/posts';
+
+interface Props { post: Post }
+const { post } = Astro.props;
+const lang = getLang(Astro.url);
+const vi = lang === 'vi';
+const { Content } = await render(post);
+// Share image: the cover, as a 1200px JPEG.
+const share = await getImage({ src: post.data.cover, width: 1200, format: 'jpg' });
+---
+<Base title={post.data.title} description={post.data.description} image={share.src}>
+  <Frame class="ph" inner="container ph-in">
+    <div class="ph-text">
+      <span class="meta" data-enter>{formatDate(post.data.date, lang)}</span>
+      <h1 class="display ph-title" data-enter="rise"><span class="line"><span>{post.data.title}</span></span></h1>
+    </div>
+    <div class="ph-cover" data-enter data-depth style={`--r:${post.data.cover.width / post.data.cover.height}`}>
+      <Image src={post.data.cover} alt={post.data.coverAlt} widths={[640, 1080, 1600]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" />
+    </div>
+  </Frame>
+
+  <Frame class="pb" inner="container pb-in">
+    <article class="prose">
+      <Content />
+    </article>
+    <a href={href(lang, '/blog')} class="pb-back meta"><span aria-hidden="true">←</span> {vi ? 'Tất cả bài viết' : 'All posts'}</a>
+  </Frame>
+</Base>
+
+<style>
+  /* Head: title beside the cover on desktop, above it on phones. */
+  .ph :global(.ph-in) { padding-top: calc(var(--header-h) + 3vh); padding-bottom: 5vh; justify-content: safe center; gap: 4vh; }
+  .ph-text { display: grid; gap: 16px; }
+  .ph-title { font-size: clamp(44px, min(6.4vw, 11vh), 120px); font-weight: 800; line-height: 1; text-wrap: balance; }
+  /* The mask's room for stacked marks (Ồ, Ữ) is on .line; long titles wrap inside it. */
+  .ph-title .line > span { display: inline; }
+  .ph-cover { aspect-ratio: var(--r); width: min(100%, calc(40svh * var(--r))); box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  .ph-cover :global(img) { display: block; width: 100%; height: 100%; }
+
+  /* Body: a reading column. */
+  .pb :global(.pb-in) { padding-top: calc(var(--header-h) + 6vh); padding-bottom: 10vh; gap: 48px; align-items: center; }
+  .prose { width: 100%; max-width: 62ch; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.8; }
+  .prose :global(p) { margin: 0 0 1.4em; }
+  .prose :global(p:has(> img)) { margin: 2.4em 0; }
+  .prose :global(img) { display: block; width: 100%; height: auto; box-shadow: 0 30px 60px -30px rgba(32, 32, 48, 0.45); }
+  .pb-back { align-self: flex-start; width: 100%; max-width: 62ch; margin-inline: auto; }
+  .pb-back:hover { color: var(--blue); }
+
+  @media (min-width: 1024px) {
+    .ph :global(.ph-in) { flex-direction: row; align-items: center; gap: 5vw; }
+    .ph-text { flex: 1; }
+    .ph-cover { flex: none; width: min(46vw, calc(64svh * var(--r))); }
+  }
+</style>

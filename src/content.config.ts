@@ -39,4 +39,18 @@ const books = defineCollection({
     }),
 });
 
-export const collections = { works, books };
+// Blog: one folder per post, src/content/posts/<slug>/ with vi.md (the owner's text) and en.md
+// (the translation), and the post's images next to them.
+const posts = defineCollection({
+  loader: glob({ pattern: '*/{vi,en}.md', base: './src/content/posts' }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      date: z.coerce.date(),
+      description: z.string(),
+      cover: image(),
+      coverAlt: z.string(),
+    }),
+});
+
+export const collections = { works, books, posts };
