@@ -39,15 +39,15 @@ type Pos = [number, number, number, 'b' | 'f'];
 type Tile = { src: ImageMetadata; d: Pos | null; m: Pos | null };
 const tiles: Tile[] = [
   // back first, so the entrance brings them in before the front ones
-  { src: open,      d: [60, 6, 20, 'b'],   m: [72, 40, 36, 'f'] },
-  { src: liveNov,   d: [80, 40, 18, 'b'],  m: [40, 70, 52, 'b'] },
-  { src: wc,        d: [56, 62, 11, 'b'],  m: null },
-  { src: cm05,      d: [33, 70, 10, 'b'],  m: null },
-  { src: musicHero, d: [52, 20, 14, 'f'],  m: [30, 2, 52, 'b'] },
-  { src: chanDung,  d: [77, 2, 11, 'f'],   m: [6, 8, 30, 'f'] },
-  { src: cm09,      d: [75, 48, 10, 'f'],  m: [74, 14, 22, 'f'] },
+  { src: open,      d: [60, 6, 20, 'b'],   m: [63, 39, 44, 'f'] },
+  { src: cm09,      d: [84, 52, 12, 'b'],  m: [74, 14, 22, 'f'] },
+  { src: wc,        d: [55, 60, 13, 'b'],  m: null },
+  { src: cm05,      d: [34, 14, 10, 'b'],  m: null },
+  { src: liveNov,   d: [76, 36, 21, 'f'],  m: [40, 70, 52, 'b'] },
+  { src: musicHero, d: [53.5, 20, 14, 'f'],  m: [30, 2, 52, 'b'] },
+  { src: chanDung,  d: [77, 2, 11, 'f'],   m: [6, 8, 36, 'f'] },
+  { src: musicLive, d: [37, 28, 14, 'f'],  m: [62, 84, 38, 'f'] },
   { src: nob,       d: [62, 74, 17, 'f'],  m: [6, 76, 44, 'f'] },
-  { src: musicLive, d: [38, 84, 15, 'f'],  m: [62, 84, 38, 'f'] },
 ];
 const pos = (k: 'd' | 'm', v: Pos | null) => (v ? `--${k}x:${v[0]}%;--${k}y:${v[1]}%;--${k}w:${v[2]}%;` : '');
 const cls = (tl: Tile) => ['tile', tl.d ? `d-${tl.d[3]}` : 'no-d', tl.m ? `m-${tl.m[3]}` : 'no-m'];
