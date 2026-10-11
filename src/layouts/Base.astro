@@ -1,7 +1,6 @@
 ---
 import '../styles/global.css';
 import Header from '../components/Header.astro';
-import Dock from '../components/Dock.astro';
 import Footer from '../components/Footer.astro';
 import { getLang, useT, alternate } from '../i18n/utils';
 import { languages, defaultLang, type Lang } from '../i18n/ui';
@@ -40,7 +39,7 @@ const canonical = new URL(Astro.url.pathname, origin).href;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#ffffff" />
     <script is:inline>
-      // Arrived through a page transition: paint with the curtain already down (see scripts/transition.ts).
+      // Arrived through a page transition: paint with the riso veil already down (see scripts/transition.ts).
       try {
         var pt = +sessionStorage.getItem('pt');
         sessionStorage.removeItem('pt');
@@ -50,14 +49,53 @@ const canonical = new URL(Astro.url.pathname, origin).href;
     <script>import '../scripts/transition';</script>
   </head>
   <body>
-    <div class="pt" aria-hidden="true"></div>
+    <canvas class="pt" aria-hidden="true"></canvas>
+    <script is:inline>
+      // Riso veil for page transitions: tiny 2px cells, each either Vivid Blue ink, paper, or clear,
+      // decided by per-cell thresholds (white noise + a coarse noise so the ink clumps like riso
+      // grain). Seeded, so both documents draw the same grain. Inline so a page arriving through a
+      // transition paints covered from its first frame. Animated by scripts/transition.ts.
+      (function () {
+        var c = document.currentScript.previousElementSibling;
+        var BLUE = 0xffff3747, PAPER = 0xfff4f2f2; // ABGR: #4737FF, #F2F2F4
+        var ctx, img, buf, ink, veil, w, h;
+        function build() {
+          var cell = Math.max(2, Math.ceil(Math.sqrt((innerWidth * innerHeight) / 1e6)));
+          w = Math.ceil(innerWidth / cell); h = Math.ceil(innerHeight / cell);
+          c.width = w; c.height = h;
+          ctx = c.getContext('2d'); img = ctx.createImageData(w, h); buf = new Uint32Array(img.data.buffer);
+          var seed = 0x2f6b9a1d;
+          var rnd = function () { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; };
+          var G = 18, gw = Math.ceil(w / G) + 2, lat = new Float32Array(gw * (Math.ceil(h / G) + 2));
+          for (var k = 0; k < lat.length; k++) lat[k] = rnd();
+          ink = new Uint8Array(w * h); veil = new Uint8Array(w * h);
+          for (var y = 0, i = 0; y < h; y++) {
+            var gy = y / G, iy = gy | 0, fy = gy - iy; fy = fy * fy * (3 - 2 * fy);
+            for (var x = 0; x < w; x++, i++) {
+              var gx = x / G, ix = gx | 0, fx = gx - ix; fx = fx * fx * (3 - 2 * fx);
+              var a = lat[iy * gw + ix], b = lat[iy * gw + ix + 1], d = lat[(iy + 1) * gw + ix], e = lat[(iy + 1) * gw + ix + 1];
+              var n = (a + (b - a) * fx) + ((d + (e - d) * fx) - (a + (b - a) * fx)) * fy;
+              ink[i] = (0.62 * rnd() + 0.38 * n) * 255;
+              veil[i] = (0.85 * rnd() + 0.15 * n) * 255;
+            }
+          }
+        }
+        // blue, paper: 0..1 share of cells that show ink / paper.
+        function draw(blue, paper) {
+          var bl = blue * 256, pl = paper * 256;
+          for (var i = 0; i < buf.length; i++) buf[i] = ink[i] < bl ? BLUE : veil[i] < pl ? PAPER : 0;
+          ctx.putImageData(img, 0, 0);
+        }
+        window.__pt = { PEAK: 0.42, build: build, draw: function (blue, paper) { if (!buf) build(); draw(blue, paper); } };
+        if (document.documentElement.classList.contains('pt-in')) window.__pt.draw(0.42, 1);
+      })();
+    </script>
     <a href="#main" class="skip">{t('skip')}</a>
     <Header />
     <main id="main" class:list={{ flush }}>
       <slot />
     </main>
     <Footer />
-    <Dock />
     <script>import '../scripts/smooth';</script>
   </body>
 </html>

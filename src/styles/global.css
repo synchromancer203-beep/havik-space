@@ -139,17 +139,19 @@ main.flush { padding-top: 0; }
 .skip:focus { top: 8px; }
 
 /* ---------- Page transition (scripts/transition.ts) ---------- */
-/* Curtain parks below the viewport; above header/dock/menu, under the paper noise. */
+/* Riso veil: a low-res canvas scaled up crisp, so each cell is a tiny square dot.
+   Above header/menu, under the paper noise. */
 .pt {
   position: fixed; inset: 0; z-index: 90;
-  background: var(--blue);
-  transform: translateY(100%);
+  width: 100%; height: 100%;
+  display: none;
   pointer-events: none;
-  will-change: transform;
+  image-rendering: pixelated;
 }
-/* Arrived covered. If the script never runs, lift the curtain anyway after 3s. */
-html.pt-in .pt { transform: none; animation: pt-safety 0.8s cubic-bezier(0.76, 0, 0.24, 1) 3s forwards; }
-@keyframes pt-safety { to { transform: translateY(-100%); } }
+.pt.on, html.pt-in .pt { display: block; }
+/* Arrived veiled. If the script never runs, clear the veil anyway after 3s. */
+html.pt-in .pt { animation: pt-safety 0.4s 3s forwards; }
+@keyframes pt-safety { to { opacity: 0; visibility: hidden; } }
 
 /* Keep the old frame on screen until the next document paints (no white flash); back/forward crossfades. */
 @view-transition { navigation: auto; }
