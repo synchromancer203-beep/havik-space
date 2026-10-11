@@ -34,7 +34,7 @@ class Carousel {
    *  item's centre at rest and its width plus the gap, and the element that grows. */
   fx = 0;
   zoom = 0;
-  spots: { c: number; w: number; el: HTMLElement; s: number }[][] = [];
+  spots: { c: number; w: number; bw: number; it: HTMLElement; el: HTMLElement; s: number; z: string; dx: number }[][] = [];
 
   constructor(track: HTMLElement) {
     this.track = track;
@@ -115,7 +115,8 @@ class Carousel {
         const el = it.querySelector<HTMLElement>('[data-zoom-target]') ?? it;
         el.style.transform = ''; // clones copy the original's inline zoom
         el.style.zIndex = '';
-        return { c: b.left - tr.left + b.width / 2, w: b.width + gap, el, s: 1 };
+        it.style.translate = '';
+        return { c: b.left - tr.left + b.width / 2, w: b.width + gap, bw: b.width, it, el, s: 1, z: '', dx: 0 };
       });
     });
   }
@@ -124,14 +125,31 @@ class Carousel {
     this.rows.forEach((r, k) => {
       const shift = this.loop ? mod(this.x, this.lens[k]) : 0;
       r.style.transform = this.loop ? `translate3d(${-shift}px,0,0)` : '';
-      // Focal zoom: full at the focal point, easing (cosine) to none one item away.
-      this.spots[k]?.forEach((sp) => {
-        const dist = Math.abs(sp.c - shift - this.fx) / sp.w;
-        const s = 1 + (dist < 1 ? this.zoom * (1 + Math.cos(Math.PI * dist)) / 2 : 0);
-        if (Math.abs(s - sp.s) < 0.0005) return;
-        sp.s = s;
-        sp.el.style.transform = s > 1 ? `scale(${s.toFixed(4)})` : '';
-        sp.el.style.zIndex = s > 1.005 ? '1' : '';
+      // Focal zoom: full at the focal point, easing (cosine) to none one item away. The items
+      // around it move apart by what it gains, so every gap stays the same.
+      const sp = this.spots[k];
+      if (!sp?.length) return;
+      let extra = 0;
+      sp.forEach((p) => {
+        const dist = Math.abs(p.c - shift - this.fx) / p.w;
+        p.s = 1 + (dist < 1 ? this.zoom * (1 + Math.cos(Math.PI * dist)) / 2 : 0);
+        extra += (p.s - 1) * p.bw;
+      });
+      let before = 0;
+      sp.forEach((p) => {
+        const grow = (p.s - 1) * p.bw;
+        const dx = before + grow / 2 - extra / 2;
+        before += grow;
+        const z = p.s > 1 ? `scale(${p.s.toFixed(4)})` : '';
+        if (p.z !== z) {
+          p.z = z;
+          p.el.style.transform = z;
+          p.el.style.zIndex = p.s > 1.005 ? '1' : '';
+        }
+        if (Math.abs(dx - p.dx) > 0.05) {
+          p.dx = dx;
+          p.it.style.translate = dx ? `${dx.toFixed(2)}px 0` : '';
+        }
       });
     });
   }
