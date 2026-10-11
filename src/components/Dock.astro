@@ -12,7 +12,7 @@ const links = [
 ---
 <nav class="dock" aria-label="Quick">
   {links.map((l) => <a href={href(lang, l.path)}>{t(l.key)}</a>)}
-  <a href={href(lang, '/#contact')} class="talk"><i class="pixel"></i>{t('cta')}</a>
+  <a href={href(lang, '#contact')} class="talk"><i class="pixel"></i>{t('cta')}</a>
 </nav>
 
 <script>

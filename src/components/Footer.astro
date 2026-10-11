@@ -18,7 +18,7 @@ const year = new Date().getFullYear();
       <nav aria-label={t('footer.nav')}>
         <p class="meta">{t('footer.nav')}</p>
         <ul>
-          {nav.filter((n) => n.path !== '/#contact').map((n) => <li><a href={href(lang, n.path)}>{t(n.key)}</a></li>)}
+          {nav.filter((n) => n.path !== '#contact').map((n) => <li><a href={href(lang, n.path)}>{t(n.key)}</a></li>)}
         </ul>
       </nav>
     </div>

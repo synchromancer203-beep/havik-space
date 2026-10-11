@@ -15,7 +15,7 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 
 ## Done
 - Phase 0–3: infra, layout/i18n, `/media` (tabs `?tab=`, filters, masonry, lightbox, deep link `?work=<slug>`), home, `/specialties` + 3 sub-pages, `/about`, 404, privacy.
-- No `/contact` page by owner's choice: email + social icons in footer (`#contact`).
+- No `/contact` page by owner's choice: email + social icons in footer (`#contact`). Contact/CTA links are a bare `#contact` (nav path too), so they scroll to the footer of the page you are on.
 - Phase 4: page transitions. `src/scripts/transition.ts` + `.pt` curtain in `Base.astro`: internal link click → Vivid Blue curtain rises → navigate → next page paints covered (sessionStorage flag read by inline `<head>` script) → curtain lifts. GSAP global timeline is paused while covered so entrance tweens play on reveal; `ready` promise exported for things that must wait (Media deep-link lightbox). `@view-transition` keeps the frame between documents; Astro prefetch on hover. Skipped for reduced motion, new-tab/modifier clicks, external/mailto, same-page hashes; opt out per link with `data-no-transition`. bfcache restore resets the curtain.
 
 ## Design rules (owner feedback — keep)
