@@ -9,12 +9,15 @@ export function useT(lang: Lang) {
   return (key: UIKey) => ui[lang][key] ?? ui[defaultLang][key];
 }
 
-/** Build a localized href from a language-neutral path like "/about" or "/media?tab=music". */
+/** Build a localized href from a language-neutral path like "/about" or "/media?tab=music".
+ *  Bare hashes ("#contact") stay on the current page: the footer is on every page. */
 export function href(lang: Lang, path: string) {
-  const [p, query] = path.split('?');
+  if (path.startsWith('#')) return path;
+  const [rest, hash] = path.split('#');
+  const [p, query] = rest.split('?');
   let clean = p === '/' ? '/' : `/${p.replace(/^\/|\/$/g, '')}/`;
   if (lang !== defaultLang) clean = clean === '/' ? `/${lang}/` : `/${lang}${clean}`;
-  return query ? `${clean}?${query}` : clean;
+  return clean + (query ? `?${query}` : '') + (hash ? `#${hash}` : '');
 }
 
 /** Strip the language prefix, returning the neutral path. */
@@ -52,5 +55,5 @@ export const nav: NavItem[] = [
       // Blog hidden until the first post exists.
     ],
   },
-  { key: 'nav.contact', path: '/#contact' },
+  { key: 'nav.contact', path: '#contact' },
 ];

@@ -142,6 +142,8 @@ const linkLabel = (cat: string) => (cat === 'music' ? t('btn.listen') : t('btn.v
 </Base>
 
 <script>
+  import { ready } from '../scripts/transition';
+
   const tabs = [...document.querySelectorAll<HTMLButtonElement>('.m-tab')];
   const cards = [...document.querySelectorAll<HTMLElement>('.card')];
   const filterBars = [...document.querySelectorAll<HTMLElement>('.m-filters')];
@@ -202,9 +204,10 @@ const linkLabel = (cat: string) => (cat === 'music' ? t('btn.listen') : t('btn.v
   dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
   dialog.addEventListener('close', () => { lenis()?.start(); body.replaceChildren(); opener?.focus(); });
 
-  // Deep link: /media?tab=music&work=beach-heaven opens that work straight away.
+  // Deep link: /media?tab=music&work=beach-heaven opens that work once the page is revealed
+  // (the dialog sits in the top layer, above the transition curtain).
   const deep = new URLSearchParams(location.search).get('work');
-  if (deep) document.querySelector<HTMLButtonElement>(`[data-open="${CSS.escape(deep)}"]`)?.click();
+  if (deep) ready.then(() => document.querySelector<HTMLButtonElement>(`[data-open="${CSS.escape(deep)}"]`)?.click());
 </script>
 
 <style>

@@ -22,7 +22,7 @@ const isActive = (path: string) => {
       <ul class="menu">
         {nav.map((item, i) => (
           <li class:list={['item', { 'has-sub': item.children }]}>
-            <a href={href(lang, item.path)} class:list={{ active: isActive(item.path) && item.path !== '/#contact' }}>
+            <a href={href(lang, item.path)} class:list={{ active: isActive(item.path) && item.path !== '#contact' }}>
               <span class="num">{i + 1}.</span>{t(item.key)}
             </a>
             {item.children && (
@@ -49,7 +49,7 @@ const isActive = (path: string) => {
           >{languages[l]}</a>
         ))}
       </div>
-      <a href={href(lang, '/#contact')} class="btn btn--signal cta">{t('cta')} <span aria-hidden="true">↗</span></a>
+      <a href={href(lang, '#contact')} class="btn btn--signal cta">{t('cta')} <span aria-hidden="true">↗</span></a>
       <button class="burger" aria-expanded="false" aria-controls="mobile-menu" data-open={t('menu.open')} data-close={t('menu.close')}>
         <span class="sr-only">{t('menu.open')}</span>
         <i></i><i></i>

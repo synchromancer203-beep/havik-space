@@ -138,6 +138,27 @@ main.flush { padding-top: 0; }
 }
 .skip:focus { top: 8px; }
 
+/* ---------- Page transition (scripts/transition.ts) ---------- */
+/* Paper layer with the riso sweep on top: a low-res canvas scaled up crisp, so each cell is a
+   tiny square dot. Above header/menu, under the paper noise. */
+.pt {
+  position: fixed; inset: 0; z-index: 90;
+  display: none;
+  background: var(--paper-2);
+  pointer-events: none;
+}
+.pt canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.pt.on, html.pt-in .pt { display: block; }
+/* Arrived mid-transition. If the script never runs, clear the layer anyway after 3s. */
+html.pt-in .pt { animation: pt-safety 0.3s 3s forwards; }
+@keyframes pt-safety { to { opacity: 0; visibility: hidden; } }
+
+/* Keep the old frame on screen until the next document paints (no white flash); back/forward crossfades. */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
