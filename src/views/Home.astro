@@ -29,24 +29,28 @@ const fields = [
   { key: 'spec.marketing', path: '/specialties/marketing' },
 ] as const;
 
-// Collage around the three fields, in two depths: b (back, faded) may pass under the words, which
-// invert over it; f (front) is placed clear of the words. Each depth moves at its own pace when the
-// frame scrolls in or out, and some photos run off the screen edge.
-// [left %, top %, width] for desktop (d) and mobile (m), null = not on that layout. The width is in
-// vw, shrunk on screens shorter than the layout was drawn for (16:10 desktop, 390×844 phone).
-type Tile = { src: ImageMetadata; z: 'b' | 'f'; d: number[] | null; m: number[] | null };
+// Collage around the three fields, built as clusters: a faded back photo with one or two sharp
+// front photos laid over a corner or an edge of it. Back photos may pass under the words, which
+// invert over them; front photos stay clear of the words. The two depths move at different paces
+// when the frame scrolls (and with the pointer on desktop), so the overlaps shift.
+// Per layout, [left %, top %, width %, depth] inside a box of fixed proportions (1440×836 desktop,
+// 390×780 phone) that scales with the screen, so the overlaps hold everywhere; null = not shown.
+type Pos = [number, number, number, 'b' | 'f'];
+type Tile = { src: ImageMetadata; d: Pos | null; m: Pos | null };
 const tiles: Tile[] = [
-  { src: open,      z: 'b', d: [24, 3, 14],   m: [34, 40, 46] },
-  { src: cm05,      z: 'b', d: [40, 27, 9],   m: null },
-  { src: wc,        z: 'b', d: [30, 46, 10],  m: null },
-  { src: musicHero, z: 'f', d: [56, 4, 16],   m: [38, 0, 38] },
-  { src: chanDung,  z: 'f', d: [78, -3, 12],  m: [4, 2, 28] },
-  { src: liveNov,   z: 'f', d: [84, 30, 17],  m: [12, 17, 34] },
-  { src: cm09,      z: 'f', d: [58, 38, 11],  m: [80, 5, 22] },
-  { src: nob,       z: 'f', d: [72, 62, 18],  m: [4, 70, 42] },
-  { src: musicLive, z: 'f', d: [10, 88, 15],  m: [50, 76, 44] },
+  // back first, so the entrance brings them in before the front ones
+  { src: open,      d: [60, 6, 20, 'b'],   m: [72, 40, 36, 'f'] },
+  { src: liveNov,   d: [80, 40, 18, 'b'],  m: [40, 70, 52, 'b'] },
+  { src: wc,        d: [56, 62, 11, 'b'],  m: null },
+  { src: cm05,      d: [33, 70, 10, 'b'],  m: null },
+  { src: musicHero, d: [52, 20, 14, 'f'],  m: [30, 2, 52, 'b'] },
+  { src: chanDung,  d: [77, 2, 11, 'f'],   m: [6, 8, 30, 'f'] },
+  { src: cm09,      d: [75, 48, 10, 'f'],  m: [74, 14, 22, 'f'] },
+  { src: nob,       d: [62, 74, 17, 'f'],  m: [6, 76, 44, 'f'] },
+  { src: musicLive, d: [38, 84, 15, 'f'],  m: [62, 84, 38, 'f'] },
 ];
-const pos = (k: 'd' | 'm', v: number[] | null) => (v ? `--${k}x:${v[0]}%;--${k}y:${v[1]}%;--${k}w:${v[2]};` : '');
+const pos = (k: 'd' | 'm', v: Pos | null) => (v ? `--${k}x:${v[0]}%;--${k}y:${v[1]}%;--${k}w:${v[2]}%;` : '');
+const cls = (tl: Tile) => ['tile', tl.d ? `d-${tl.d[3]}` : 'no-d', tl.m ? `m-${tl.m[3]}` : 'no-m'];
 
 // Featured work comes from the content collection (featured: true), in the order music → visual → marketing.
 const catOrder = { music: 0, visual: 1, marketing: 2 };
@@ -81,16 +85,18 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
   <!-- FIELDS: three words in a layered collage; the words invert over the photos that pass under them -->
   <Frame class="fields" inner="f-stage">
     <div class="collage" aria-hidden="true">
-      {tiles.map((tl, i) => (
-        <div
-          class:list={['tile', `tile--${tl.z}`, { 'no-d': !tl.d, 'no-m': !tl.m }]}
-          data-enter
-          data-depth
-          style={`${pos('d', tl.d)}${pos('m', tl.m)}--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
-        >
-          <div class="tile-in"><Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 20vw, 40vw" /></div>
-        </div>
-      ))}
+      <div class="collage-box">
+        {tiles.map((tl, i) => (
+          <div
+            class:list={cls(tl)}
+            data-enter
+            data-depth
+            style={`${pos('d', tl.d)}${pos('m', tl.m)}--i:${i};aspect-ratio:${tl.src.width}/${tl.src.height}`}
+          >
+            <div class="tile-in"><Image src={tl.src} alt="" widths={[400, 720]} sizes="(min-width: 768px) 20vw, 45vw" /></div>
+          </div>
+        ))}
+      </div>
     </div>
     <!-- The words twice, stacked: a paper-coloured copy under the photos gives the inverting copy on
          top a solid backdrop, so it stays dark (and inverted over photos) while the frame's own
@@ -131,6 +137,24 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     </Frame>
   ))}
 </Base>
+
+<script>
+  // Desktop: the collage's two depths shift against each other with the pointer (eased).
+  const collage = document.querySelector<HTMLElement>('.fields .collage');
+  if (collage && matchMedia('(pointer: fine) and (prefers-reduced-motion: no-preference)').matches) {
+    let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+    const tick = () => {
+      x += (tx - x) * 0.07; y += (ty - y) * 0.07;
+      collage.style.setProperty('--px', x.toFixed(3));
+      collage.style.setProperty('--py', y.toFixed(3));
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.002 ? requestAnimationFrame(tick) : 0;
+    };
+    addEventListener('pointermove', (e) => {
+      tx = (e.clientX / innerWidth) * 2 - 1; ty = (e.clientY / innerHeight) * 2 - 1;
+      if (!raf) raf = requestAnimationFrame(tick);
+    }, { passive: true });
+  }
+</script>
 
 <style>
   /* ---------- Hero ---------- */
@@ -186,20 +210,31 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
     background: var(--frame-bg); opacity: var(--bgo, 1);
     translate: 0 calc(var(--fy, 0) * -1svh);
   }
-  .collage { position: absolute; inset: var(--header-h) 0 0; z-index: 1; }
+  /* The collage box keeps its proportions and scales with the screen (right-aligned on desktop,
+     where extra width goes to the words); tiles are placed in % of it. */
+  .collage { position: absolute; inset: var(--header-h) 0 0; z-index: 1; display: flex; align-items: center; justify-content: flex-end; }
+  .collage-box { position: relative; flex: none; width: min(100%, calc((100svh - var(--header-h)) * 1.722)); aspect-ratio: 1440 / 836; }
   .tile {
-    --z: 0.26; /* how far ahead of the text this depth runs while the frame scrolls (svh per svh) */
+    --z: 0.3; /* how far ahead of the text this depth runs while the frame scrolls (svh per svh) */
+    --pk: 16; /* pointer parallax, px at the screen edge */
     position: absolute;
-    left: var(--dx); top: var(--dy); width: min(calc(var(--dw) * 1vw), calc(var(--dw) * 1.6svh));
+    left: var(--dx); top: var(--dy); width: var(--dw);
   }
   html:global(.paged) .collage .tile { translate: 0 calc(var(--fy, 0) * var(--z) * 1svh); }
-  .tile--f { box-shadow: 0 24px 48px -20px rgba(32, 32, 48, 0.45); }
-  /* The fade goes on the inner box: the entrance animates the tile's own opacity. */
-  .tile--b { --z: 0.06; }
-  .tile--b .tile-in { opacity: 0.4; animation-duration: 13s; }
   .no-d { display: none; }
-  /* A slow drift keeps the collage alive while it is on screen; the back drifts slower. */
-  .tile-in { height: 100%; overflow: hidden; will-change: transform; animation: drift 9s ease-in-out calc(var(--i) * -1.3s) infinite alternate; }
+  /* Back: faded (on the inner box: the entrance animates the tile's own opacity), slower, and it
+     moves against the pointer while the front follows it. */
+  .d-b { --z: 0.05; --pk: -6; }
+  .d-b .tile-in { opacity: 0.45; animation-duration: 13s; }
+  /* The shadow sits on the inner box so it moves with the photo (pointer parallax). */
+  .d-f { z-index: 1; }
+  .d-f .tile-in { box-shadow: 0 24px 48px -18px rgba(32, 32, 48, 0.5); }
+  /* A slow drift keeps the collage alive while it is on screen. */
+  .tile-in {
+    height: 100%; overflow: hidden; will-change: transform;
+    translate: calc(var(--px, 0) * var(--pk) * 1px) calc(var(--py, 0) * var(--pk) * 1px);
+    animation: drift 9s ease-in-out calc(var(--i) * -1.3s) infinite alternate;
+  }
   .tile-in :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
   @keyframes drift { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
 
@@ -260,9 +295,16 @@ const featured = (await getCollection('works', (w) => w.data.featured && !!w.dat
               mask-image: linear-gradient(to top, transparent 0%, #000 45%);
     }
     .hero-cta { left: var(--gutter); right: auto; bottom: calc(6vh + 22vw + 16px); }
-    .tile { left: var(--mx); top: var(--my); width: min(calc(var(--mw) * 1vw), calc(var(--mw) * 0.462svh)); }
-    .no-d { display: block; }
+    .collage { justify-content: center; }
+    .collage-box { width: min(100%, calc((100svh - var(--header-h)) * 0.5)); aspect-ratio: 390 / 780; }
+    .tile { left: var(--mx); top: var(--my); width: var(--mw); }
+    .no-d, .d-b, .d-f { display: block; z-index: auto; --z: 0.3; --pk: 0; }
+    .d-b .tile-in, .d-f .tile-in { opacity: 1; box-shadow: none; animation-duration: 9s; }
     .no-m { display: none; }
+    .m-b { --z: 0.05; }
+    .m-b .tile-in { opacity: 0.45; animation-duration: 13s; }
+    .m-f { z-index: 1; }
+    .m-f .tile-in { box-shadow: 0 20px 40px -18px rgba(32, 32, 48, 0.5); }
     .f-word .display { font-size: clamp(48px, min(16.5vw, 8.5svh), 72px); }
   }
 </style>
