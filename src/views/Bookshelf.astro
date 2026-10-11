@@ -1,7 +1,9 @@
 ---
 // /bookshelf: books the owner has read and recommends. One frame: the title, then every cover on a
 // single endless conveyor (scripts/carousel.ts) that drifts on its own and can be dragged or
-// swiped; title, author and year sit under each cover. Books: src/content/books/<slug>.md.
+// swiped; title, author and year sit under each cover. The cover passing a focal point grows
+// (desktop: +20% at the spot of the 5th cover; phones: +10% just left of centre).
+// Books: src/content/books/<slug>.md.
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
@@ -22,12 +24,12 @@ const books = (await getCollection('books')).sort(
       <h1 class="display bs-title" data-enter="rise"><span class="line"><span>{vi ? 'Tủ sách.' : 'Bookshelf.'}</span></span></h1>
     </div>
     {books.length > 0 && (
-      <div class="g-track" data-rows="1" data-auto="0.35" data-enter data-depth>
+      <div class="g-track" data-rows="1" data-auto="0.35" data-focus="0.833" data-zoom="0.2" data-focus-m="0.436" data-zoom-m="0.1" data-enter data-depth>
         {books.map((b) => {
           const a = (b.data.cover.width / b.data.cover.height).toFixed(4);
           return (
             <figure class="g-thumb book" data-a={a} style={`--a:${a}`}>
-              <div class="book-cover">
+              <div class="book-cover" data-zoom-target>
                 <Image src={b.data.cover} alt={`${b.data.title}, ${b.data.author}`} widths={[320, 560]} sizes="(min-width: 768px) 20vw, 50vw" draggable="false" />
               </div>
               <figcaption>
@@ -56,6 +58,7 @@ const books = (await getCollection('books')).sort(
   .g-track {
     --cover-h: min(40svh, 26vw);
     display: flex; overflow: clip;
+    padding-top: calc(var(--cover-h) * 0.21); /* room for the focal cover to grow upward */
     user-select: none; -webkit-user-select: none;
   }
   .g-track:global(.is-loop) { cursor: grab; touch-action: none; }
@@ -63,7 +66,7 @@ const books = (await getCollection('books')).sort(
   .g-track :global(.g-row) { flex: 1; display: flex; gap: clamp(16px, 2.4vw, 40px); justify-content: center; will-change: transform; }
   .g-track:global(.is-loop) :global(.g-row) { justify-content: flex-start; }
   .book { flex: none; width: calc(var(--cover-h) * var(--a)); margin: 0; display: grid; gap: 14px; align-content: start; }
-  .book-cover { aspect-ratio: var(--a); background: #e2e2e8; box-shadow: 0 18px 36px -18px rgba(32, 32, 48, 0.5); }
+  .book-cover { position: relative; aspect-ratio: var(--a); background: #e2e2e8; box-shadow: 0 18px 36px -18px rgba(32, 32, 48, 0.5); transform-origin: 50% 100%; will-change: transform; }
   .book-cover :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
   figcaption { display: grid; gap: 4px; }
   .b-title {
@@ -74,6 +77,6 @@ const books = (await getCollection('books')).sort(
 
   @media (max-width: 767px) {
     .bs-title { font-size: clamp(48px, 14vw, 72px); }
-    .g-track { --cover-h: min(34svh, 54vw); }
+    .g-track { --cover-h: min(34svh, 54vw); padding-top: calc(var(--cover-h) * 0.11); }
   }
 </style>

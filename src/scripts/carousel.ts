@@ -5,6 +5,9 @@
 // If everything already fits, the rows just sit centred and nothing moves.
 // A track can fix its row count (data-rows) and drift on its own like a conveyor (data-auto, px
 // per frame); the drift pauses under the mouse, while dragging and for a moment after a gesture.
+// It can also have a focal point (data-focus / data-focus-m on phones: a fraction of the track's
+// width): the item passing it grows by data-zoom / data-zoom-m, easing in and out as it moves.
+// What grows is the item's [data-zoom-target] (its cover), from its bottom edge.
 
 const mobile = matchMedia('(max-width: 767px)');
 const rowsFor = (n: number) => (mobile.matches ? (n < 10 ? 2 : 3) : n < 5 ? 1 : n <= 12 ? 2 : 3);
@@ -27,6 +30,11 @@ class Carousel {
   auto: number;
   held = false;
   rest = 0;
+  /** Focal point (px from the track's left) and how much the item there grows; per row, every
+   *  item's centre at rest and its width plus the gap, and the element that grows. */
+  fx = 0;
+  zoom = 0;
+  spots: { c: number; w: number; el: HTMLElement; s: number }[][] = [];
 
   constructor(track: HTMLElement) {
     this.track = track;
@@ -88,12 +96,43 @@ class Carousel {
         }
       });
     }
+    this.measure();
     this.render();
+  }
+
+  /** Where each item sits at rest, for the focal zoom. */
+  measure() {
+    const d = this.track.dataset;
+    const f = Number((mobile.matches && d.focusM) || d.focus) || 0;
+    this.zoom = f ? Number((mobile.matches && d.zoomM) || d.zoom) || 0 : 0;
+    if (!this.zoom) { this.spots = []; return; }
+    const tr = this.track.getBoundingClientRect();
+    this.fx = tr.width * f;
+    this.spots = this.rows.map((r) => {
+      const gap = parseFloat(getComputedStyle(r).columnGap) || 0;
+      return ([...r.children] as HTMLElement[]).map((it) => {
+        const b = it.getBoundingClientRect();
+        const el = it.querySelector<HTMLElement>('[data-zoom-target]') ?? it;
+        el.style.transform = ''; // clones copy the original's inline zoom
+        el.style.zIndex = '';
+        return { c: b.left - tr.left + b.width / 2, w: b.width + gap, el, s: 1 };
+      });
+    });
   }
 
   render() {
     this.rows.forEach((r, k) => {
-      r.style.transform = this.loop ? `translate3d(${-mod(this.x, this.lens[k])}px,0,0)` : '';
+      const shift = this.loop ? mod(this.x, this.lens[k]) : 0;
+      r.style.transform = this.loop ? `translate3d(${-shift}px,0,0)` : '';
+      // Focal zoom: full at the focal point, easing (cosine) to none one item away.
+      this.spots[k]?.forEach((sp) => {
+        const dist = Math.abs(sp.c - shift - this.fx) / sp.w;
+        const s = 1 + (dist < 1 ? this.zoom * (1 + Math.cos(Math.PI * dist)) / 2 : 0);
+        if (Math.abs(s - sp.s) < 0.0005) return;
+        sp.s = s;
+        sp.el.style.transform = s > 1 ? `scale(${s.toFixed(4)})` : '';
+        sp.el.style.zIndex = s > 1.005 ? '1' : '';
+      });
     });
   }
 
