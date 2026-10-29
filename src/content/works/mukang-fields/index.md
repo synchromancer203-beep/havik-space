@@ -12,4 +12,5 @@ desc: {"vi": "Ban nhạc space jazz từ Hà Nội, kết hợp sax ngẫu hứn
 cover: ./cover.jpg
 gallery: ["./g01.jpg", "./g02.jpg", "./g03.jpg", "./g04.jpg"]
 links: [{"label": "Bandcamp", "url": "https://mukangfields.bandcamp.com"}]
+embed: "https://bandcamp.com/EmbeddedPlayer/album=3677101283/size=large/bgcol=ffffff/linkcol=333333/tracklist=false/artwork=small/transparent=true/"
 ---

@@ -12,4 +12,5 @@ desc: {"vi": "Dự án vaporwave và future funk dùng sample, soundscape và h�
 cover: ./cover.jpg
 gallery: ["./g01.jpg", "./g02.jpg", "./g03.jpg", "./g04.jpg", "./g05.png"]
 links: [{"label": "Bandcamp", "url": "https://synchromancer.bandcamp.com/album/e-n-d-o-f"}]
+embed: "https://bandcamp.com/EmbeddedPlayer/album=1784922404/size=large/bgcol=ffffff/linkcol=f171a2/tracklist=false/artwork=small/track=2648238179/transparent=true/"
 ---

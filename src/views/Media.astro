@@ -127,6 +127,9 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
                     <ul>{w.data.results[lang].split(' · ').map((r) => <li>{r}</li>)}</ul>
                   </div>
                 )}
+                {w.data.embed && (
+                  <iframe class:list={['m-player', w.data.embed.includes('spotify.com') ? 'is-spotify' : 'is-bandcamp']} src={w.data.embed} title={`${w.data.title} player`} loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" data-enter></iframe>
+                )}
                 {w.data.links.length > 0 && (
                   <div class="m-links" data-enter>
                     {w.data.links.map((l, i) => (
@@ -323,6 +326,10 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
   .m-results ul { display: grid; gap: 4px; margin-top: 6px; }
   .m-results li { padding-left: 16px; position: relative; }
   .m-results li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 6px; height: 6px; background: var(--orange); }
+  /* Player above the buttons: Spotify's compact embed, Bandcamp's "large, small artwork" one. */
+  .m-player { display: block; width: 100%; max-width: 520px; border: 0; }
+  .m-player.is-spotify { height: 152px; border-radius: 12px; }
+  .m-player.is-bandcamp { height: 120px; }
   .m-links { display: flex; flex-wrap: wrap; gap: 10px; }
   .m-next { justify-self: start; color: var(--orange); border-bottom: 1px solid var(--orange); letter-spacing: 0.06em; }
 

@@ -22,6 +22,8 @@ const works = defineCollection({
       cover: image().optional(),
       gallery: z.array(image()).default([]),
       links: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
+      // Music: a player above the buttons. The iframe src of a Spotify or Bandcamp embed.
+      embed: z.string().url().optional(),
     }),
 });
 
