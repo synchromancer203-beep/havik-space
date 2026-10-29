@@ -13,4 +13,5 @@ client: {"vi": "Pha hay Fmaj7", "en": "Pha hay Fmaj7"}
 cover: ./cover.webp
 gallery: []
 links: [{"label": "Spotify", "url": "https://open.spotify.com/track/2dgxkFzWEpbJyv2Sls52SN"}]
+embed: "https://open.spotify.com/embed/track/2dgxkFzWEpbJyv2Sls52SN"
 ---

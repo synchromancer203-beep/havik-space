@@ -13,4 +13,5 @@ client: {"vi": "intermusic", "en": "intermusic"}
 cover: ./cover.webp
 gallery: []
 links: [{"label": "Spotify", "url": "https://open.spotify.com/album/7FoMhpeOnqY1b3Ea77DgRm"}, {"label": "Bandcamp", "url": "https://insideintermusic.bandcamp.com/album/ecos-del-abismo"}]
+embed: "https://open.spotify.com/embed/album/7FoMhpeOnqY1b3Ea77DgRm"
 ---

@@ -13,4 +13,5 @@ client: {"vi": "The Flob × TPOLE × Corrupted Moonlight", "en": "The Flob × TP
 cover: ./cover.jpg
 gallery: []
 links: [{"label": "Spotify", "url": "https://open.spotify.com/track/6S9R7wIEBAXmVV3X43GFfB"}]
+embed: "https://open.spotify.com/embed/track/6S9R7wIEBAXmVV3X43GFfB"
 ---

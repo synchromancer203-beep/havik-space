@@ -12,4 +12,5 @@ desc: {"vi": "Dự án noise thực nghiệm. Đồng tổ chức 5 sự kiện 
 cover: ./cover.webp
 gallery: ["./g01.jpg", "./g02.webp", "./g03.jpg", "./g04.jpg", "./g05.jpg", "./g06.jpg", "./g07.jpg", "./g08.jpg", "./g09.jpg"]
 links: [{"label": "Bandcamp", "url": "https://synchromancer.bandcamp.com/album/are-we-cold-yet"}]
+embed: "https://bandcamp.com/EmbeddedPlayer/album=1726380526/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/"
 ---
