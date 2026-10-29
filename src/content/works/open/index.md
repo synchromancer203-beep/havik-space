@@ -12,4 +12,5 @@ desc: {"vi": "Nhóm nhạc điện tử mở cửa cho bất kỳ ai muốn chơ
 cover: ./cover.webp
 gallery: ["./g01.webp", "./g02.webp", "./g03.webp", "./g04.webp", "./g05.webp"]
 links: [{"label": "Bandcamp", "url": "https://openproj.bandcamp.com/album/open-ep"}, {"label": "Spotify", "url": "https://open.spotify.com/artist/0Xi7a0LyABCLq7T7Mcdtkm"}]
+embed: "https://open.spotify.com/embed/track/37Xe7HQYq8a6zFLA6qD2mv"
 ---
