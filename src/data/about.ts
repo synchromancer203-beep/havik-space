@@ -1,9 +1,13 @@
 // Copy for /about. VN from content/03-about; EN mirrors the VN facts (draft for review).
+import type { ImageMetadata } from 'astro';
 import type { Lang } from '../i18n/ui';
+import teach1 from '../assets/about/chung-chi-su-pham-1.webp';
+import teach2 from '../assets/about/chung-chi-su-pham-2.webp';
 
 type Bi = Record<Lang, string>;
 
-export interface Entry { when: string; what: Bi; where?: Bi; }
+// shots: photos of the paper itself, a thumbnail beside the entry that opens a viewer.
+export interface Entry { when: string; what: Bi; where?: Bi; shots?: ImageMetadata[]; }
 export interface Section { id: string; title: Bi; entries: Entry[]; }
 
 const same = (s: string): Bi => ({ vi: s, en: s });
@@ -41,7 +45,7 @@ export const timeline: Section[] = [
     id: 'certs',
     title: { vi: 'Chứng chỉ', en: 'Certificates' },
     entries: [
-      { when: '10/2026', what: { vi: 'Chứng chỉ nghiệp vụ sư phạm', en: 'Teaching certificate' } },
+      { when: '10/2026', what: { vi: 'Chứng chỉ nghiệp vụ sư phạm', en: 'Teaching certificate' }, shots: [teach1, teach2] },
       { when: '2026', what: same('Claude Certified AI Fluency for Educators') },
       { when: '2026', what: same('Google Gemini Certified Educator') },
       { when: '2019 – 2021', what: same('IELTS 6.5') },
