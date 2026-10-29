@@ -13,4 +13,5 @@ client: {"vi": "in memory of the view from hanoi opera house", "en": "in memory 
 cover: ./cover.webp
 gallery: []
 links: [{"label": "Bandcamp", "url": "https://inmemoryoftheviewfromhanoioperahouse.bandcamp.com/album/beach-heaven"}, {"label": "Spotify", "url": "https://open.spotify.com/album/6vF3cKzCdDujvCeQmW7RaI"}]
+embed: "https://open.spotify.com/embed/track/5PoVbkDbA7HxS9xcKLjtrm"
 ---

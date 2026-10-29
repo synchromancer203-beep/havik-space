@@ -12,4 +12,5 @@ desc: {"vi": "Ban nhạc synthwave Hà Nội, tiên phong dòng synthwave tại 
 cover: ./cover.webp
 gallery: ["./g01.webp", "./g02.webp", "./g03.webp", "./g04.webp", "./g05.png", "./g06.webp", "./g07.webp", "./g08.webp", "./g09.webp", "./g10.png", "./g11.webp", "./g12.webp", "./g13.webp", "./g14.webp", "./g15.webp", "./g16.webp", "./g17.webp", "./g18.jpg", "./g19.jpg", "./g20.webp", "./g21.webp", "./g22.webp", "./g23.jpg", "./g24.jpg"]
 links: [{"label": "Bandcamp", "url": "https://synchromancer.bandcamp.com"}, {"label": "Spotify", "url": "https://open.spotify.com/artist/72RsK2KWW9jmEaqkjVy5ja"}]
+embed: "https://open.spotify.com/embed/track/3RAsXiHGNCXx4d3EcsRLeo"
 ---
