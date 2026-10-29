@@ -249,6 +249,49 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     show(b.dataset.tab!);
   }));
 
+  // Desktop: the cover and the text beside it line up top and bottom (label on the cover's top edge,
+  // buttons on its bottom edge). The cover grows to the text's height, within the frame's height and
+  // 56% of its width; a wider cover narrows the text and makes it taller, so settle the size in a few
+  // passes (it only shrinks from the largest). It is never smaller than before (66svh); shorter text
+  // stretches to it, the buttons going to the bottom. A wide photo still short of the text at full
+  // width is cropped at the sides to the text's height, never past square.
+  const wide = matchMedia('(min-width: 1024px)');
+  const seen = new WeakMap<Element, string>();
+  function fit(row: HTMLElement) {
+    const img = row.querySelector<HTMLImageElement>('.m-cover-media img');
+    const info = row.querySelector<HTMLElement>('.m-info');
+    if (!img || !info) return;
+    img.style.width = img.style.height = img.style.maxHeight = info.style.minHeight = '';
+    if (!wide.matches || !row.clientWidth) return;
+    const cs = getComputedStyle(row);
+    const r = parseFloat(img.style.getPropertyValue('--r')) || 1;
+    const w = row.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const h = row.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const cap = Math.min(w * 0.56, h * r);
+    img.style.maxHeight = 'none';
+    let iw = cap;
+    for (let i = 0; i < 8; i++) {
+      img.style.width = `${iw}px`;
+      const next = Math.min(cap, info.offsetHeight * r);
+      if (Math.abs(next - iw) < 1) break;
+      iw = next;
+    }
+    iw = Math.max(iw, Math.min(cap, innerHeight * 0.66 * r));
+    img.style.width = `${iw}px`;
+    const ih = Math.max(iw / r, Math.min(info.offsetHeight, iw, h));
+    img.style.height = `${ih}px`;
+    info.style.minHeight = `${ih}px`;
+  }
+  const covers = [...document.querySelectorAll<HTMLElement>('.m-cover-in')];
+  const ro = new ResizeObserver((entries) => entries.forEach(({ target, contentRect: c }) => {
+    const key = `${Math.round(c.width)}x${Math.round(c.height)}`;
+    if (seen.get(target) === key) return;
+    seen.set(target, key);
+    fit(target as HTMLElement);
+  }));
+  covers.forEach((c) => ro.observe(c));
+  document.fonts.ready.then(() => covers.forEach(fit));
+
   // Arrive on the requested work (?work=), or where this tab was left (back/forward).
   show(tab);
   if (workEl) {
@@ -400,7 +443,11 @@ const groupsFor = (cat: string) => [...new Set(byTab[cat].map((w) => w.data.grou
     .m-list li { break-inside: avoid; }
     .m-frame :global(.m-cover-in) { flex-direction: row; align-items: center; gap: 5vw; }
     .m-cover-media { align-self: center; flex: none; max-width: 56%; }
-    .m-cover-media :global(img) { width: auto; max-width: 100%; max-height: 66svh; }
-    .m-info { flex: 1; }
+    .m-cover-media :global(img) { width: auto; max-width: 100%; max-height: 66svh; object-fit: cover; }
+    /* The script sizes the cover to the text beside it: label on its top edge, buttons on its bottom.
+       The link to the next work hangs below, outside that block. */
+    .m-info { flex: 1; position: relative; display: flex; flex-direction: column; }
+    .m-links { margin-top: auto; }
+    .m-info > .m-next { position: absolute; top: calc(100% + 18px); left: 0; }
   }
 </style>
