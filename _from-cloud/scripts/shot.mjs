@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const out = process.argv[2];
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const p = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+await p.goto('http://localhost:4321/vi/media', { waitUntil: 'networkidle' });
+await p.waitForTimeout(800);
+await p.screenshot({ path: out + '/tabs-vi.png', clip: { x: 0, y: 0, width: 390, height: 260 } });
+await p.goto('http://localhost:4321/vi/media?tab=visual&work=pccc-truc-binh', { waitUntil: 'networkidle' });
+await p.keyboard.press('PageDown'); await p.waitForTimeout(1600);
+await p.screenshot({ path: out + '/pccc.png' });
+await p.goto('http://localhost:4321/vi/', { waitUntil: 'networkidle' });
+await p.keyboard.press('End'); await p.waitForTimeout(1600);
+await p.screenshot({ path: out + '/footer.png' });
+await b.close();
