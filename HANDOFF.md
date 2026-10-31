@@ -29,17 +29,58 @@ Personal portfolio for Havik (Hanoi): music · visual · marketing. Owner writes
 - Phase 4: page transitions. `src/scripts/transition.ts` + `.pt` layer in `Base.astro` (paper bg + canvas). Internal link click → paper layer fades in (0.18s) while a band of fine Vivid Blue riso stipple (white-noise grain, sparse leading edge, dense core; never a solid blue screen) sweeps top → bottom (0.4s). Navigation starts when the band's core nears the bottom (`NAV_AT`); the old page keeps animating until the next is ready. With cross-document View Transitions (Chromium/Safari) the browser crossfades (0.3s) from that frame straight onto the new page; the inline `<head>` script drops the cover on `pagereveal`. Without VT (or if the browser skips it) the next page paints under the paper (sessionStorage flag) and it fades out (0.24s). GSAP global timeline is paused until reveal. Astro prefetch on hover. Skipped for reduced motion, new-tab/modifier clicks, external/mailto, same-page hashes and anything inside `[data-no-transition]` (the footer: owner wants transitions from the header only). bfcache restore resets the layer. Note: headless Chromium skips cross-doc VT at random (~50%); the fallback covers it.
 - Dock removed by owner's choice (header is always visible).
 - Phase 5 (SEO/perf): per-page meta description + OG label in `src/data/seo.ts` (owner to review; EN/VN), share images built at `/og/<lang>/<slug>.png` by `src/pages/og/[...slug].png.ts` + `src/lib/og.ts` (satori + resvg; Vivid Blue plate, paper riso grain, Big Shoulders from `src/assets/fonts/big-shoulders-display-800.ttf` = fontsource latin+latin-ext+vietnamese 800 merged with fontTools so Vietnamese marks render). Base adds og:image/site_name/locale:alternate, twitter card, Person JSON-LD on home, `noindex` prop (404). `@astrojs/sitemap` with hreflang (excludes /en/ redirects, 404), `public/robots.txt`. Cloudflare Web Analytics: set `site.cfBeacon` in `src/i18n/ui.ts` (empty = off; privacy page mentions it only when set). Lighthouse (local, simulated mobile): perf 92–99 mobile / 100 desktop, a11y 95–100, BP 100, SEO 100. Perf fixes: home hero entrance is CSS (not GSAP) so the name paints without waiting for JS; stylesheets inlined; display font preloaded; hero image gets 480/800 widths.
+- **Music players** on work cover frames: optional `embed` in the works schema = the iframe `src` of a Spotify (`open.spotify.com/embed/...`, 152px compact) or Bandcamp (`bandcamp.com/EmbeddedPlayer/...`, 120px) embed; shown between the description and the buttons (`.m-player` in `src/views/Media.astro`). Spotify needs only the normal link turned into `/embed/<type>/<id>`; Bandcamp needs the album id, which is only in the embed code (Share / Embed on Bandcamp).
+- **Cover and text line up** on desktop work cover frames (≥1024px): a script in `src/views/Media.astro` (`fit()`, ResizeObserver per `.m-cover-in`) sizes the cover to the height of the text from its label to its buttons, within the frame's height and 56% of its width, never below the old 66svh; shorter text stretches with its buttons at the bottom (`.m-links { margin-top: auto }`); a wide photo still short at full width is cropped at the sides (`object-fit: cover`), never past square. The next-work link hangs below the block (absolute). Phones unchanged.
+- **Certificate photos** on /about: a timeline entry can carry `shots` (images, in `src/data/about.ts`); `src/components/TimelineSection.astro` puts a thumbnail beside it (count badge when more than one) that opens a viewer (`<dialog class="tl-lb">`, ← →, ✕ / click outside). Teaching certificate: red cover + certificate (`src/assets/about/chung-chi-su-pham-{1,2}.webp`). On the certificate the given names, date of birth and certificate number are pixelated + blurred in the image itself; only "Nguyễn" stays readable. The unblurred scan is deliberately kept out of the repo.
 - Known a11y contrast flags kept by design (owner rules): menu numbers #a9a9b3, white text on orange buttons.
 
 ## Design rules (owner feedback — keep)
 - Colours only from style guide: paper bg `#F2F2F4` with very subtle gradients, Deep Blue `#202030` text, Vivid Blue `#4737FF` accent, Vivid Orange `#F75C03` ~10% (CTAs).
 - Minimal, visual-first. No slogans/taglines, no decorative meta (coordinates, `/05` labels), no grid-tile bg, no pixelation.
-- Risograph one-ink (component `Ink.astro`, Vivid Blue) ONLY on hero + personal photos. Work images: true colour, never cropped (keep original ratio).
+- Risograph one-ink (component `Ink.astro`, Vivid Blue) ONLY on hero + personal photos. Work images: true colour, original ratio, with one exception the owner accepted (Oct 2026): on a desktop work cover frame a wide photo may be cropped at the sides (never past square) so it matches the height of the text beside it.
 - Motion is scroll/gesture-driven and paged (one frame per scroll), not hover-driven. Hermes site = riso technique reference only, not its colours.
 - Menu numbering `1. 2. 3.`, same size as labels, light grey.
 - Vietnamese diacritics: heading masks (`.line`) have top padding — keep it.
+
+## Session log: cloud session, Oct 2026 (PRs #7–#15, all squash-merged to main)
+1. Owner review pass (#7): About lost the bio lead/text, the View work button and the 2019 + 2024–25 highlights (`src/data/about.ts`, `src/views/About.astro`); Media tabs use the short labels and no counts, gallery footer has no image count or drag hint, PCCC g02 strip removed (`src/views/Media.astro`, `src/scripts/carousel.ts`, `src/content/works/pccc-truc-binh/`); footer email arrow is an inline SVG, "Navigation" label gone (`src/components/Footer.astro`); home fields frame rebuilt as the layered collage (`src/views/Home.astro`, `src/scripts/frames.ts` `rise-twin`).
+2. Bookshelf (#8, #9, #11): `src/views/Bookshelf.astro`, `src/pages/bookshelf.astro`, `src/pages/vi/bookshelf.astro`, `src/content/books/*`, books collection in `src/content.config.ts`, conveyor/focal additions in `src/scripts/carousel.ts`, menu in `src/i18n/utils.ts` + `src/i18n/ui.ts`, header tightening in `src/components/Header.astro`, SEO in `src/data/seo.ts`. 10 books.
+3. Blog (#10): `src/views/Blog.astro`, `src/views/Post.astro`, `src/pages/blog/*`, `src/pages/vi/blog/*`, `src/lib/posts.ts`, posts collection, `src/content/posts/nob-network/`, `src/content/posts/nightdrive-poesiomat/`; `image` prop in `src/layouts/Base.astro`.
+4. Music players (#12, #13): `embed` in `src/content.config.ts`, 9 music works' `index.md`, `src/views/Media.astro`.
+5. Cover/text alignment (#14): `src/views/Media.astro`.
+6. Teaching certificate (#15): `src/data/about.ts`, `src/components/TimelineSection.astro`, `src/assets/about/chung-chi-su-pham-*.webp`.
+
+### Decisions the owner made (keep)
+- Kept: SEO wording "since 2019"; the extreme gallery images Thành Lợi g07 and Warcross g03; pointer parallax on the home collage; portrait tablets use the phone collage; Warcross tile +25%.
+- Rejected: a plain grid collage (too basic); many photos / blurred back layer (opacity only, 7–9 photos); scattered tiles (they must overlap in clusters); a /contact page; long media tab labels; any book between the Tam Thể volumes.
+- Bookshelf: original publication year (not the edition's), no click action, no description; focal 74.5% / +20% desktop, 43.6% / +10% phones.
+- Blog: top-level menu item between Work and Bookshelf; Claude translates to EN; VN text kept verbatim; only these 2 posts for now.
+- Music players: Spotify when a work has both; tracks picked by the owner (Alyssa, Neon Nights Neon Lights, Pump); compact players.
+- Cropping the sides of wide covers on desktop is accepted (see Design rules).
+- Certificate: blur given names + date of birth + certificate number; show cover and certificate; thumbnail beside the entry.
+
+### Open items / known issues
+- The Spotify/Bandcamp players were never seen running from the cloud (both hosts blocked there): check them on the live site.
+- At 1024px, OPEN and Corrupted Moonlight covers end ~8px short of the text at each end (wide photo already cropped to square).
+- A Harsh Smoker's Sonic Compilation has no streaming source, so no player (owner confirmed).
+- Bookshelf: the I Have No Mouth, and I Must Scream cover is only 278px wide (soft when zoomed): owner may send a bigger one. Author written "C. M. Kösemen" (cover says Kosemen).
+- Owner still to review the EN translations of both blog posts.
+- `astro check` is not installed (the command hangs waiting to install); `npm run build` is the check.
+- `_from-cloud/`: files that only existed in the cloud session (scripts, drafts, screenshots, chat images). Not part of the site; see its README.
 
 ## Next
 - Cloudflare Web Analytics token (owner, later); owner review of `src/data/seo.ts`; submit `sitemap-index.xml` in Google Search Console.
 - Gallery images must not be extreme strips: pccc-truc-binh g02 (1440×122) was dropped for breaking the carousel.
 - Missing data: year + credit for the 2 websites (pccc-truc-binh, thanh-loi-dental), iMind cover image, owner review of all EN text and 3 inferred skills (Mixing & Mastering, Sound Design, Illustration).
+
+## Local setup after this session
+- No new packages, environment variables or config: `git pull` then `npm install` (unchanged lockfile) and `npm run build` / `npm run dev`.
+- Only to rerun the screenshot scripts in `_from-cloud/scripts/`: `cd _from-cloud/scripts && npm install && npx playwright install chromium`; they expect `npx astro preview` on port 4321 and write to a path passed as the first argument (the cloud paths and `executablePath: '/opt/pw-browsers/chromium'` in them must be changed or removed).
+- Still pending as before: Cloudflare Web Analytics token (`site.cfBeacon` in `src/i18n/ui.ts`).
+
+## Owner's local-only docs: what to update
+- **sitemap.md**: header menu is now Home · Specialties · About · Work · Blog · Bookshelf · Contact (7 items). New routes: `/blog`, `/blog/<slug>` (`nob-network`, `nightdrive-poesiomat`), `/bookshelf`, with `/vi/` twins. Still no `/contact` page.
+- **implementation-plan.md**: add Bookshelf, Blog, music players, cover/text alignment and certificate viewer as done (see Session log); content workflow: covers sent in chat → `src/content/books/`, posts as `src/content/posts/<slug>/{vi,en}.md`, players via `embed` in a work's `index.md`.
+- **style-guide.md**: work cover photos may be cropped at the sides on desktop work cover frames (never past square), the only exception to "never crop"; Spotify player keeps its own colours (dark/coloured card, rounded 12px), Bandcamp is transparent; ↗ in the display font must be an inline SVG (no glyph, iOS shows an emoji); header cells tighten to 8px padding / 12px text at 1024–1279px and the CTA hides there.
+- **motion-guide.md**: Bookshelf conveyor drifts on its own (`data-auto`, pauses on hover/drag/after a gesture, off under reduced motion) with a focal cover that scales up (cosine easing) while its neighbours move apart; home collage: front/back layers at different scroll paces plus pointer parallax on desktop; work and certificate viewers open without page transition.
+- **khung-noi-dung.md**: About: no bio text, highlights only 2022 Grapevine, Teaching certificate (10/2026) has photos; Work: music works carry a player (track per work as listed in Decisions); Blog: 2 posts (10/03/2026 NÓB Network, 13/05/2026 Nightdrive/Poesiomat) VN original + EN translation; Bookshelf: 10 books in order Ký Ức Đen, Dune, The Time Machine, Do Androids Dream of Electric Sheep?, Neuromancer, Tam Thể 1–3, I Have No Mouth and I Must Scream, All Tomorrows.
